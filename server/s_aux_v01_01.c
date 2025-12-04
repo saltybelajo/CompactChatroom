@@ -16,11 +16,8 @@ int writeft(int fd, char *msgbuf, char *actor)
         return(-1);
     }    
     
-    time_t t;
-    struct tm *tmp;
-    memset(tmp, '\0', sizeof(tmp));
-    t = time(NULL);
-    tmp = localtime(&t);
+    time_t t = time(NULL);
+    struct tm *tmp = localtime(&t);
     
     if (tmp == NULL) {
         perror("writeft: tmp");
