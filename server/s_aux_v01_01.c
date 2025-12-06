@@ -34,7 +34,7 @@ int writeft(int fd, char *msgbuf, char *actor)
 
     uint16_t curelem = 0;
 
-    strncat(finoutput, datetime_str, strlen(datetime_str)); // Dec 1 17:25:30\0
+    strncat(finoutput, datetime_str, sizeof(finoutput) - 1); // Dec 1 17:25:30\0
     curelem += strlen(datetime_str);
 
     strncat(finoutput, actor, strlen(actor)); // Dec 1 17:25:30 192.168.0.18\0
