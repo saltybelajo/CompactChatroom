@@ -1,6 +1,6 @@
 /* Version from: 01.12.2025 */
 
-#include "s_aux_v01_01.h"
+#include "s_aux.h"
 
 int main(int argc, char **argv) {
 
