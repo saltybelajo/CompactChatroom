@@ -1,0 +1,12 @@
+CC=gcc
+CFLAGS=-I.
+DEPS = s_aux.h
+
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+
+server: server.o s_aux.o
+	$(CC) -o server server.o s_aux.o
+
