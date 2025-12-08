@@ -1,6 +1,6 @@
 /* Version from: 30.11.2025*/
 
-#include "s_aux_v01_01.h"
+#include "s_aux.h"
 
 int writeft(int fd, char *msgbuf, char *actor)
 {
