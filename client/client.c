@@ -1,6 +1,6 @@
 /* Version from Dec 4, 2025 */
 
-#include "c_aux_v01_01.h"
+#include "c_aux.h"
 
 int main(int argc, char **argv) {
 
@@ -44,12 +44,14 @@ int main(int argc, char **argv) {
 
     char msgbuffer[MSGMLEN];
     connect(conn_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-    snprintf(msgbuffer, sizeof(msgbuffer), "Hello! I am %s", cl_ip_str);
+    snprintf(msgbuffer, sizeof(msgbuffer), "Hello! I am %s.\n", cl_ip_str);
     write(conn_fd, msgbuffer, sizeof(msgbuffer));
 
 
     for ( ; ; ) {
-        
+        sleep(15);
+        snprintf(msgbuffer, sizeof(msgbuffer), "How is the weather today haha? I'm %s by the way.\n", cl_ip_str);
+        send(conn_fd, msgbuffer, sizeof(msgbuffer), 0);
     }
 
 
