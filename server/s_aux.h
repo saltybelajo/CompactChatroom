@@ -10,6 +10,6 @@
 #include <fcntl.h>
 
 
-extern u_int16_t MSGMLEN;
+#define MSGMLEN 512
 
 int writeft(int fd, char *msgbuf, char *actor);
