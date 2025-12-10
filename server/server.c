@@ -190,13 +190,7 @@ int main(int argc, char **argv) {
             snprintf(msgstr1, MSGMLEN, "Child process created. PID: %i. Handles the connection to: %s:%u.\n", mypid, str_cli_ip_child, child_resv_cli_port);
             write(pipetopar_fd[1], msgstr1, MSGMLEN);
 
-            /* snprintf(msgstr1, MSGMLEN, "My PID is %i. I will wait 15 seconds, then terminate.\n", mypid);
-            writeft(log_fd0, msgstr1, input_serv_ip);
-
-            sleep(15);
-
             
-             */
             char *get_msg_from_cli = malloc(MSGMLEN);
 
             do {
@@ -226,9 +220,9 @@ int main(int argc, char **argv) {
         
         
 
-        //writeft(log_fd0, "Connection is lost. Shutting down.\n", input_serv_ip);
-        //close(log_fd0);
-        //exit(EXIT_SUCCESS);
+        writeft(log_fd0, "Connection is lost. Shutting down.\n", input_serv_ip);
+        close(log_fd0);
+        exit(EXIT_SUCCESS);
     
     }
     
