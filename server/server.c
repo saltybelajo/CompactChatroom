@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     fflush(stdout);
 
     char *temp0 = malloc(MSGMLEN);
-    snprintf(temp0, MSGMLEN, "echo "" > %s", SERVLOGPATH);
+    snprintf(temp0, MSGMLEN, "echo \"\" > %s", SERVLOGPATH);
     system(temp0);
     free(temp0); 
     int log_fd0;
