@@ -3,7 +3,7 @@ CFLAGS=-I.
 DEPS = s_aux.h
 
 %.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -ggdb -o $@ $< $(CFLAGS)
 
 all: server2 server
 

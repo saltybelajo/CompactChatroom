@@ -24,7 +24,11 @@ int main(int argc, char **argv) {
     
     
 
-    char *input_serv_ip = "192.168.0.18";
+    char *input_serv_ip = "127.0.0.1";
+    if (argc >= 2) {
+        input_serv_ip = argv[1];
+    }
+
     unsigned short input_serv_port = 9877;
     writeft(log_fd0, "Starting...\n", input_serv_ip);
 

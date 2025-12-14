@@ -8,17 +8,19 @@ int main(int argc, char **argv) {
     struct sockaddr_in serv_addr;
     socklen_t addr_size;
 
+    char *serv_ip_str = "127.0.0.1";
 
-    if(argc != 2) {
-        printf("Usage: tcpcli <IPaddress>");
-        exit(EXIT_FAILURE);
+    if(argc < 2) {
+        printf("Usage: %s <IPaddress>.\nServer IP address set to localhost by default.\n", argv[0]);
+    }
+    else
+    {
+        serv_ip_str = argv[1];
     }
 
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
-
-    char *serv_ip_str = "192.168.0.18";
     char *cl_ip_str = "192.168.0.19";
     uint16_t serv_port = 9877;
 
