@@ -4,7 +4,7 @@
 
 
 
-int main(void) {
+int main(int argc, char **argv) {
 
     int listenFd, connFd;
     socklen_t addrSize;
@@ -15,9 +15,14 @@ int main(void) {
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
 
+    char *inputServIp = "127.0.0.1";
+    unsigned short inputServPort = 9877;  
 
-    char *inputServIp = "192.168.0.18";
-    unsigned short inputServPort = 9877;    
+    if (argc >= 2) {
+        inputServIp = argv[1];
+    }
+
+  
 
 
 /*    char *temp0 = malloc(MSGMLEN);                                              
@@ -139,7 +144,7 @@ int main(void) {
                     case (-1):
                         break;
                     case (0):
-                        snprintf(cliActorStr, MSGMLEN, "%s:%u", cliIpStr, cliPort);
+                        snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliActorStr);
                         writeft(logFd, buffLogs, cliActorStr);
                         pFds[i].fd = 0;
@@ -149,7 +154,7 @@ int main(void) {
                         close(connFd);
                         break;
                     default:
-                        buffMsg[MSGMLEN] = '\0';
+                        buffMsg[MSGMLEN - 1] = '\0';    
                         snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
                         writeft(logFd, buffMsg, cliActorStr);
                         break;
