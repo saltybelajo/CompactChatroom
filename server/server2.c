@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     }                  
 
 
-    struct pollfd pFds[CLIENTCAP + 1];                                   /* set up poll() */
+    struct pollfd pFds[CLIENTCAP];                                   /* set up poll() */
     memset(&pFds, 0, sizeof(pFds));
     
     pFds[0].fd = listenFd;
@@ -82,28 +82,52 @@ int main(int argc, char **argv) {
 
                 connFd = accept(listenFd, (struct sockaddr *) &cliAddr, &addrSize);
                 curOnline++;
-                b_socket *pCurUser = &curUsers[curOnline];
-                *pCurUser = (b_socket) {.fd = connFd, .addr = cliAddr};
-                printf("connFd: %i\n", connFd);
+                                                                    /* looking for the first free cell in curUsers[]*/
+                int availIndexInCurUser = -1;
+                for (int j = 0; j < CLIENTCAP; j++) {
+                    if (curUsers[j].fd == 0) {
+                        availIndexInCurUser = j;
+                        break;
+                    }
+                }    
+                if (availIndexInCurUser == -1) {
+                    perror("No available space found in curUsers[]!\n");
+                    exit(EXIT_FAILURE);
+                }                                               /* once a slot has been found, put the creds in there*/
+                curUsers[availIndexInCurUser] = (b_socket) {.fd = connFd, .addr = cliAddr};                             
+                b_socket *pCurUser = &curUsers[availIndexInCurUser]; //malloc(sizeof(curUsers[availIndexInCurUser]));
     
+
                 inet_ntop(AF_INET, (struct sockaddr *) &pCurUser->addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
                 snprintf(buffLogs, MSGMLEN, "Accepted a connection from: %s:%u. Socket: %i.\n", cliIpStr, ntohs(pCurUser->addr.sin_port), connFd); //change to strcliip cliport
                 writeft(logFd, buffLogs, inputServIp);
 
-                pFds[curOnline].fd = connFd;
-                pFds[curOnline].events = POLLIN | POLLPRI;
+                int availIndexInpFds = -1;
+                for (int j = 0; j < CLIENTCAP; j++) {
+                    if (pFds[j].fd == 0) {
+                        availIndexInpFds = j;
+                        break;
+                    }
+                } 
+                if (availIndexInpFds == -1) {
+                    perror("No available space found in pFds[]!\n");
+                    exit(EXIT_FAILURE);
+                }
+                pFds[availIndexInpFds].fd = connFd;
+                pFds[availIndexInpFds].events = POLLIN | POLLPRI;
                 flags1 = fcntl(connFd, F_GETFL, 0);
                 if (fcntl(connFd, F_SETFL, flags1 | O_NONBLOCK) == -1) {
                     perror("fcntl");
                     exit(EXIT_FAILURE);
                 }
+                
             }
 
 
             for (int i = 1; i < CLIENTCAP; i++)                                                 /* check the sockets for incoming messages */   
             {
 
-                if (pFds[i].fd > 0) //  && pFds[i].revents & POLLIN
+                if (pFds[i].fd > 0 && pFds[i].revents & POLLIN) //  
                 {
 
                     char buffMsg[MSGMLEN];
@@ -112,19 +136,29 @@ int main(int argc, char **argv) {
                     int cliFd = pFds[i].fd;
                     uint16_t cliPort = 0;
 
-                    for (int j = 0; j < CLIENTCAP + 1; j++) {                          /* having our fd, we now go through the curUser */ 
-                        if (cliFd == curUsers[j].fd) {                                 /* array to resolve our sockaddr_in. */
-                            inet_ntop(AF_INET, (struct sockaddr *) &curUsers[j].addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
-                            cliPort = ntohs(curUsers[curOnline].addr.sin_port);
+
+                    struct sockaddr_in cliAddr;
+                    memset(&cliAddr, 0, sizeof(cliAddr));
+
+                    int indexInCurUsers = -1;
+                    for (int j = 0; j < CLIENTCAP; j++) {                          /* having our fd, we now go through the curUser */ 
+                        if (cliFd == curUsers[j].fd) {                             /* array to resolve our sockaddr_in. */
+                            indexInCurUsers = j;
                             break;
                         }
                     }
+                    if (indexInCurUsers == -1) {
+                        snprintf(buffLogs, MSGMLEN, "Not able to resolve the IP address for the fd=%i.\n", cliFd);
+                        perror(buffLogs);
+                        exit(EXIT_FAILURE);
+                    }
+                    cliAddr = curUsers[indexInCurUsers].addr;
 
-                     
-                    
+                    inet_ntop(AF_INET, (struct sockaddr *) &cliAddr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
+                    cliPort = ntohs(cliAddr.sin_port); 
+                                                                /* resolved the IP creds into cliIpStr and cliPort*/
 
                     int n = read(pFds[i].fd, buffMsg, MSGMLEN);
-                    
                     switch (n)
                     {
                     case -1:
@@ -133,7 +167,9 @@ int main(int argc, char **argv) {
                         snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliActorStr);
                         writeft(logFd, buffLogs, cliActorStr);
+
                         memset(&pFds[i], 0, sizeof(pFds[i]));
+                        memset(&curUsers[indexInCurUsers], 0, sizeof(curUsers[indexInCurUsers]));
                         curOnline--;
                         close(connFd);
                         break;
