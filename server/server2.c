@@ -22,29 +22,8 @@ int main(int argc, char **argv) {
         inputServIp = argv[1];
     }
 
-  
-
-
-/*    char *temp0 = malloc(MSGMLEN);                                              
-    char filesToFlush[2][128];
-    strncpy(filesToFlush[0], SERVLOGPATH, 128);
-    strncpy(filesToFlush[0], SERVBUFPATH, 128);
-    int count0 = sizeof(filesToFlush) / sizeof(filesToFlush[0]);    
-    //int count0 = 2;        
-    for (int i=0; i < count0; i++) {
-
-        printf("%s\n", filesToFlush[i]);
-        snprintf(temp0, MSGMLEN, "echo "" > %s", filesToFlush[i]);
-        system(temp0);
-
-    }
-    free(temp0); */
-
-    FILE *f0;
-    f0 = fopen("../logs/serverlog1.txt", "w");
-    fclose(f0);
     int logFd;
-    if ((logFd = open("../logs/serverlog1.txt", O_WRONLY | O_APPEND | O_CREAT, 0644)) == -1) {
+    if ((logFd = open(SERVLOGPATH, O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
         printf("%s", strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -85,7 +64,7 @@ int main(int argc, char **argv) {
 //        printf("pollResult: %d, curOnline: %d, curOnline fd: %d\n", pollResult, curOnline, pFds[curOnline].fd);
         if (pollResult == -1) {
             perror("poll error\n");
-            exit(EXIT_FAILURE);
+//            exit(EXIT_FAILURE);
         }
         else if (pollResult >= 0) {
             if (pFds[0].revents & POLLIN) {                                                     /* check the listening socket for new connections */
