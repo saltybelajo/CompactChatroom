@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
         }
 
-        if (nread = getline(&input_line, &size, stream) != -1) {
+        if ((nread = getline(&input_line, &size, stream)) != -1) {
             //writeft(log_fd0, input_line, cl_ip_str);
             snprintf(msgbuffer, sizeof(msgbuffer), "%s", input_line);
             write(conn_fd, msgbuffer, MSGMLEN);
