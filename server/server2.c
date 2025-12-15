@@ -51,9 +51,7 @@ int main(int argc, char **argv) {
         perror("fcntl");
         exit(EXIT_FAILURE);
     }
-
-    b_socket curUsers[CLIENTCAP];
-    memset(&curUsers, 0, sizeof(curUsers));
+    
 
     for ( ; ; ) {
 
@@ -83,7 +81,7 @@ int main(int argc, char **argv) {
                 connFd = accept(listenFd, (struct sockaddr *) &cliAddr, &addrSize);
                 curOnline++;
                                                                     /* looking for the first free cell in curUsers[]*/
-                int availIndexInCurUser = -1;
+                /* int availIndexInCurUser = -1;
                 for (int j = 0; j < CLIENTCAP; j++) {
                     if (curUsers[j].fd == 0) {
                         availIndexInCurUser = j;
@@ -93,9 +91,15 @@ int main(int argc, char **argv) {
                 if (availIndexInCurUser == -1) {
                     perror("No available space found in curUsers[]!\n");
                     exit(EXIT_FAILURE);
-                }                                               /* once a slot has been found, put the creds in there*/
-                curUsers[availIndexInCurUser] = (b_socket) {.fd = connFd, .addr = cliAddr};                             
-                b_socket *pCurUser = &curUsers[availIndexInCurUser]; //malloc(sizeof(curUsers[availIndexInCurUser]));
+                }            */
+                                                       /* once a slot has been found, put the creds in there*/
+                //curUsers[availIndexInCurUser] = (b_socket) {.fd = connFd, .addr = cliAddr};                             
+                //b_socket *pCurUser = &curUsers[availIndexInCurUser]; //malloc(sizeof(curUsers[availIndexInCurUser]));
+                add_b_socket(connFd, cliAddr);
+
+                b_socket *pCurUser;
+                pCurUser = find_b_socket(connFd);
+                
     
 
                 inet_ntop(AF_INET, (struct sockaddr *) &pCurUser->addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
@@ -135,14 +139,15 @@ int main(int argc, char **argv) {
                     char cliActorStr[32];
                     int cliFd = pFds[i].fd;
                     uint16_t cliPort = 0;
-
-
                     struct sockaddr_in cliAddr;
                     memset(&cliAddr, 0, sizeof(cliAddr));
 
-                    int indexInCurUsers = -1;
-                    for (int j = 0; j < CLIENTCAP; j++) {                          /* having our fd, we now go through the curUser */ 
-                        if (cliFd == curUsers[j].fd) {                             /* array to resolve our sockaddr_in. */
+                    b_socket *pCurUser;
+                    pCurUser = find_b_socket(cliFd);
+
+                    /* int indexInCurUsers = -1;
+                    for (int j = 0; j < CLIENTCAP; j++) {                           
+                        if (cliFd == curUsers[j].fd) {                             
                             indexInCurUsers = j;
                             break;
                         }
@@ -151,8 +156,8 @@ int main(int argc, char **argv) {
                         snprintf(buffLogs, MSGMLEN, "Not able to resolve the IP address for the fd=%i.\n", cliFd);
                         perror(buffLogs);
                         exit(EXIT_FAILURE);
-                    }
-                    cliAddr = curUsers[indexInCurUsers].addr;
+                    } */
+                    cliAddr = pCurUser->addr;
 
                     inet_ntop(AF_INET, (struct sockaddr *) &cliAddr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
                     cliPort = ntohs(cliAddr.sin_port); 
@@ -169,7 +174,7 @@ int main(int argc, char **argv) {
                         writeft(logFd, buffLogs, cliActorStr);
 
                         memset(&pFds[i], 0, sizeof(pFds[i]));
-                        memset(&curUsers[indexInCurUsers], 0, sizeof(curUsers[indexInCurUsers]));
+                        delete_b_sock(pCurUser);
                         curOnline--;
                         close(connFd);
                         break;

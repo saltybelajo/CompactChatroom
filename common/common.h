@@ -12,6 +12,6 @@
 
 int writeft(int fd, char *msgbuf, char *actor);
 
-unsigned long sdbm(unsigned char *str);
+unsigned long sdbm(char *str);
 
 // char *truncate(char *str, unsigned int size);
