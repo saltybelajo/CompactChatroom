@@ -1,4 +1,4 @@
-/* Version from: 11.12.2025 */
+/* Version from: 15.12.2025 */
 
 #include "s_aux.h"
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     }                  
 
 
-    struct pollfd pFds[CLIENTCAP];                                   /* set up poll() */
+    struct pollfd pFds[CLIENTCAP];                                   /* set up poll() for listening fds */
     memset(&pFds, 0, sizeof(pFds));
     
     pFds[0].fd = listenFd;

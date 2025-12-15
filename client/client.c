@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
 
-    int conn_fd;
+    int listen_fd, conn_fd;
     struct sockaddr_in serv_addr;
     socklen_t addr_size;
 
@@ -25,11 +25,8 @@ int main(int argc, char **argv) {
     uint16_t serv_port = 9877;
 
 
-    FILE *f_odder;
-    f_odder = fopen("clilog1.txt", "w");
-    fclose(f_odder);
     int log_fd0;
-    log_fd0 = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT, 0644);
+    log_fd0 = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
 
 
     conn_fd = socket(AF_INET, SOCK_STREAM, 0);

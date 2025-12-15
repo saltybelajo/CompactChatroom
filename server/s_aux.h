@@ -5,12 +5,9 @@
 #include "../common/common.h"
 #define SERVLOGPATH "../logs/serverlog1.txt"
 #define SERVBUFPATH "../buffers/buffer1.txt"
-#define CLIENTCAP 16
+
 #include <poll.h>
 #define TIMEOUT 3
-#include "uthash.h"
-
-int getlsocket(char *ipAddr, uint16_t port);
 
 typedef struct b_socket {
     int fd;
