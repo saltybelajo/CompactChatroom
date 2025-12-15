@@ -22,6 +22,6 @@ extern b_socket *curUsers;
 
 void add_b_socket(int fd, struct sockaddr_in addr);
 b_socket *find_b_socket(int fd);
-void delete_b_sock(b_socket *sock);
+void delete_b_socket(b_socket *sock);
 
 #endif

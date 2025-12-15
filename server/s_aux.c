@@ -60,7 +60,7 @@ b_socket *find_b_socket(int fd) {
 
 }
 
-void delete_b_sock(b_socket *sock) {
+void delete_b_socket(b_socket *sock) {
 
     HASH_DEL(curUsers, sock);  /* user: pointer to deletee */
     free(sock);             /* optional; it's up to you! */
