@@ -8,5 +8,5 @@ DEPS = c_aux.h
 
 
 client: client.o c_aux.o ../common/common.o
-	$(CC) -o client client.o c_aux.o ../common/common.o
+	$(CC) -o client client.o c_aux.o ../common/common.o -lm
 
