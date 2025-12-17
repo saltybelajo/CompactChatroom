@@ -6,8 +6,9 @@
 
 int main(int argc, char **argv) {
 
-    int listenFd, connFd;
+    int acceptFd, connFd;
     struct sockaddr_in servAddr;
+    size_t parcelSize;
 
     char buffLogs[MSGMLEN];
 
@@ -34,93 +35,122 @@ int main(int argc, char **argv) {
     writeft(logFd, buffLogs, inputServIp);
 
 
-    if ((listenFd = getlsocket(inputServIp, inputServPort)) == -1) {        /* initialize the listening socket*/
+    struct pollfd readFromCliFds[CLIENTCAP];                                   /* poll for sockets reading client's msgs */
+    memset(&readFromCliFds, 0, sizeof(readFromCliFds));
+
+    struct pollfd acceptSockFds[1];                                            /* poll for sockets listening to connections*/
+    memset(&acceptSockFds, 0, sizeof(acceptSockFds));
+
+
+    if ((acceptFd = getlsocket(inputServIp, inputServPort)) == -1) {        
+        write(0, "Error creating a listening socket, aborting.\n", 46);
         exit(EXIT_FAILURE);
-    }                  
-
-
-    struct pollfd pFds[CLIENTCAP];                                   /* set up poll() for listening fds */
-    memset(&pFds, 0, sizeof(pFds));
-    
-    pFds[0].fd = listenFd;
-    pFds[0].events = POLLIN | POLLPRI;
-    int curOnline = 0;
-
-    int flags1 = fcntl(listenFd, F_GETFL, 0);
-    if (fcntl(listenFd, F_SETFL, flags1 | O_NONBLOCK) == -1) {
-        perror("fcntl");
+    }     
+    acceptSockFds[0].fd = acceptFd;
+    acceptSockFds[0].events = POLLIN | POLLPRI;
+    int tmpFlags = fcntl(acceptFd, F_GETFL, 0);
+    if (fcntl(acceptFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
+        write(0, "fcntl failed\n", 14);
         exit(EXIT_FAILURE);
     }
     
-
+    int curOnline = 0;
     for ( ; ; ) {
 
-        for (int i = 0; i < CLIENTCAP; i++)
+                                                                                    /* set .revents everywhere to 0 */
+        for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++) 
         {
-            pFds[i].revents = 0;
+            readFromCliFds[i].revents = 0;
         }
-        int pollResult = poll(pFds, curOnline + 1, 1000);
-        if (pollResult < 0) {
-            perror("poll error\n");
+        for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
+        {
+            acceptSockFds[i].revents = 0;
         }
-        else if (pollResult == 0) {
+
+                                                                                    /* start polling */
+        int acceptSockFdsResult = poll(acceptSockFds, 1, 200);
+        int readFromCliFdsResult = poll(readFromCliFds, curOnline, 200); 
+        
+        //printf("readFromCliFdsResult = %i; acceptSockFdsResult = %i.\n", readFromCliFdsResult, acceptSockFdsResult);
+
+
+                                                                                    /* acceptSockFds */
+        if (acceptSockFdsResult < 0) {
+            write(0, "acceptSockFds poll error!\n", 27);
+        }  
+        else if (acceptSockFdsResult == 0) {
+            
+        }          
+        else if (acceptSockFdsResult > 0) {
+            printf("in here\n");
+            for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
+                {
+                    printf("listeSockarr size %lu\n", sizeof(acceptSockFds)/sizeof(acceptSockFds[0]));
+
+                    if (acceptSockFds[i].revents & POLLIN) {
+
+                        char cliIpStr[INET_ADDRSTRLEN];
+                        uint16_t cliPort;
+                        struct sockaddr_in cliAddr;
+                        socklen_t addrSize = sizeof(cliAddr);
+
+
+                        connFd = accept(acceptFd, (struct sockaddr *) &cliAddr, &addrSize);
+                        curOnline++;
+                        add_b_socket(connFd, cliAddr);
+
+                        b_socket *pCurUser;
+                        pCurUser = find_b_socket(connFd);
+
+                        inet_ntop(AF_INET, (struct sockaddr *) &pCurUser->addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN); /* cliIpStr init */
+                        cliPort = ntohs(pCurUser->addr.sin_port);
+                        snprintf(buffLogs, MSGMLEN, "Accepted a connection from: %s:%u. Socket: %i.\n", cliIpStr, cliPort, connFd); 
+                        writeft(logFd, buffLogs, inputServIp);
+
+                        int availIndexInreadFromCliFds = -1;
+                        for (int j = 0; j < CLIENTCAP; j++) {
+                            if (readFromCliFds[j].fd == 0) {
+                                availIndexInreadFromCliFds = j;
+                                break;
+                            }
+                        } 
+                        if (availIndexInreadFromCliFds == -1) {
+                            write(0, "No available space found in readFromCliFds[]!\n", 47);
+                            exit(EXIT_FAILURE);
+                        }
+                        readFromCliFds[availIndexInreadFromCliFds].fd = connFd;
+                        readFromCliFds[availIndexInreadFromCliFds].events = POLLIN | POLLPRI;
+                        tmpFlags = fcntl(connFd, F_GETFL, 0);
+                        if (fcntl(connFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
+                            perror("fcntl");
+                            exit(EXIT_FAILURE);
+                        }
+
+                    }
+
+                }
+        }  
+
+
+                                                                                /* readFromCliFds */
+        if (readFromCliFdsResult < 0) {
+            write(0, "readFromCliFds poll error\n", 27);
+        }
+        else if (readFromCliFdsResult == 0) {
             continue;
+            printf("here\n");
         }
         else {
-            if (pFds[0].revents & POLLIN) {                                                     /* check the listening socket for new connections */
-
-                char cliIpStr[INET_ADDRSTRLEN];
-                uint16_t cliPort;
-                char buffAux[64];
-                struct sockaddr_in cliAddr;
-                socklen_t addrSize = sizeof(cliAddr);
-
-
-                connFd = accept(listenFd, (struct sockaddr *) &cliAddr, &addrSize);
-                curOnline++;
-                add_b_socket(connFd, cliAddr);
-
-                b_socket *pCurUser;
-                pCurUser = find_b_socket(connFd);
-                
-    
-
-                inet_ntop(AF_INET, (struct sockaddr *) &pCurUser->addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN);
-                snprintf(buffLogs, MSGMLEN, "Accepted a connection from: %s:%u. Socket: %i.\n", cliIpStr, ntohs(pCurUser->addr.sin_port), connFd); //change to strcliip cliport
-                writeft(logFd, buffLogs, inputServIp);
-
-                int availIndexInpFds = -1;
-                for (int j = 0; j < CLIENTCAP; j++) {
-                    if (pFds[j].fd == 0) {
-                        availIndexInpFds = j;
-                        break;
-                    }
-                } 
-                if (availIndexInpFds == -1) {
-                    perror("No available space found in pFds[]!\n");
-                    exit(EXIT_FAILURE);
-                }
-                pFds[availIndexInpFds].fd = connFd;
-                pFds[availIndexInpFds].events = POLLIN | POLLPRI;
-                flags1 = fcntl(connFd, F_GETFL, 0);
-                if (fcntl(connFd, F_SETFL, flags1 | O_NONBLOCK) == -1) {
-                    perror("fcntl");
-                    exit(EXIT_FAILURE);
-                }
-
-            }
-
-
-            for (int i = 1; i < CLIENTCAP; i++)                                                 /* check the sockets for incoming messages */   
+            
+            for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++)                                        /* check the sockets for read() */   
             {
-
-                if (pFds[i].fd > 0 && pFds[i].revents & POLLIN) //  
+                if (readFromCliFds[i].fd > 0 && readFromCliFds[i].revents & POLLIN) //  
                 {
-
+                    
                     char buffMsg[MSGMLEN];
                     char cliIpStr[INET_ADDRSTRLEN];
-                    char cliActorStr[32];
-                    int cliFd = pFds[i].fd;
+                    char cliActorStr[AUTHORMLEN];
+                    int cliFd = readFromCliFds[i].fd;
                     uint16_t cliPort = 0;
                     struct sockaddr_in cliAddr;
                     memset(&cliAddr, 0, sizeof(cliAddr));
@@ -133,7 +163,7 @@ int main(int argc, char **argv) {
                     cliPort = ntohs(cliAddr.sin_port); 
                                                                 
 
-                    int n = read(pFds[i].fd, buffMsg, MSGMLEN);
+                    int n = read(readFromCliFds[i].fd, buffMsg, MSGMLEN);
                     switch (n)
                     {
                     case -1:
@@ -143,7 +173,7 @@ int main(int argc, char **argv) {
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliActorStr);
                         writeft(logFd, buffLogs, cliActorStr);
 
-                        memset(&pFds[i], 0, sizeof(pFds[i]));
+                        memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
                         delete_b_socket(pCurUser);
                         curOnline--;
                         close(connFd);
