@@ -4,99 +4,125 @@
 
 int main(int argc, char **argv) {
 
-    int listen_fd, conn_fd;
-    struct sockaddr_in serv_addr;
-    socklen_t addr_size;
+    int listenFd, connectFd;
+    struct sockaddr_in servAddr;
 
-    char *serv_ip_str = "127.0.0.1";
+    char *inputServIp = "127.0.0.1";
+    char *cliIpStr = "192.168.0.19";
+    uint16_t inputServPort = 9877;
+
+    char buffLogs[MSGMLEN];
 
     if(argc < 2) {
-        printf("Usage: %s <IPaddress>.\nServer IP address set to localhost by default.\n", argv[0]);
+        //printf("Usage: %s <IPaddress>.\nServer IP address set to localhost by default.\n", argv[0]);
     }
     else
     {
-        serv_ip_str = argv[1];
+        inputServIp = argv[1];
     }
 
-
+    fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    char *cl_ip_str = "192.168.0.19";
-    uint16_t serv_port = 9877;
+    int logFd;
+    logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
 
-
-    int log_fd0;
-    log_fd0 = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
-
-
-    conn_fd = socket(AF_INET, SOCK_STREAM, 0);
-
-
-    memset(&serv_addr, '\0', sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(serv_port);
-    if (inet_pton(AF_INET, serv_ip_str, (struct sockaddr *) &serv_addr.sin_addr.s_addr) <= 0) {
-        printf("%s", strerror(errno));
+    memset(&servAddr, '\0', sizeof(servAddr));                                                  /* getting servers actual IP address*/
+    servAddr.sin_family = AF_INET;
+    servAddr.sin_port = htons(inputServPort);
+    if (inet_pton(AF_INET, inputServIp, (struct sockaddr *) &servAddr.sin_addr.s_addr) <= 0) {
+        //printf("%s", strerror(errno));
+        writeft(logFd, "inet_pton fuckup?\n", "client");
         exit(EXIT_FAILURE);
     }
 
+    
 
-    char msgbuffer[MSGMLEN];
-    connect(conn_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-    snprintf(msgbuffer, sizeof(msgbuffer), "Hello! I am %s.\n", cl_ip_str);
-    write(conn_fd, msgbuffer, sizeof(msgbuffer));
-    printf("Type /quit to shut down.\n");
 
+                                                                                        /* polls */
+    struct pollfd readServFds[1];                                                  
+    memset(&readServFds, 0, sizeof(readServFds));
+
+    struct pollfd readGetlineFds[1];
+    memset(&readGetlineFds, 0, sizeof(readGetlineFds));
+
+    connectFd = socket(AF_INET, SOCK_STREAM, 0);
+
+                                                                                        /* connecting to the server */
+    char buffMsg[MSGMLEN];
+    connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr)); 
+    int tmpFlags = fcntl(connectFd, F_GETFL, 0);
+    if (fcntl(connectFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
+        write(2, "fcntl failed\n", 14);
+        exit(EXIT_FAILURE);
+    }
+    readServFds[0].fd = connectFd;
+    readServFds[0].events = POLLIN | POLLPRI;
+    
+    
+    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %s.\n", cliIpStr);
+    write(connectFd, buffMsg, sizeof(buffMsg));
+    //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
+    //printf("Type /quit to shut down.\n");
+    
+
+                                                                                        /* the filestream n shi for Getline() */
+    size_t size;
+    ssize_t nread;
+    char *inputLine;
+    /* tmpFlags = fcntl(0, F_GETFL, 0);
+    if (fcntl(0, tmpFlags | O_NONBLOCK) == -1) {
+        writeft(logFd, "stdin fuckup\n", "client");
+        exit(EXIT_FAILURE);
+    } */
+    readGetlineFds[0].fd = 0;
+    readGetlineFds[0].events = POLLIN | POLLPRI;
 
     for ( ; ; ) {
+
+        inputLine = NULL;
+        size = 0;
         
-        FILE *stream;
-        char *input_line = NULL;
-        size_t size = 0;
-        ssize_t nread;
+        readServFds[0].revents = 0;                                                         /* set .revents everywhere to 0 */
+        readGetlineFds[0].revents = 0;
 
 
-        stream = fdopen(0, "r");
-        if (stream == NULL) {
+        int readServFdsResult = poll(readServFds, 1, 200);                                 /* polls cooking up */
+        int readGetlineFdsResult = poll(readGetlineFds, 1, 200);
 
-            perror("fopen");
-            exit(EXIT_FAILURE);
+
+        if (readGetlineFdsResult < 0) {                                                     /* readGetlineFds poll */
+            write(2, "readGetlineFds poll error!\n", 28);
+        }
+        else if (readGetlineFdsResult == 0) {
 
         }
-
-        if ((nread = getline(&input_line, &size, stream)) != -1) {
-            //writeft(log_fd0, input_line, cl_ip_str);
-            snprintf(msgbuffer, sizeof(msgbuffer), "%s", input_line);
-            write(conn_fd, msgbuffer, MSGMLEN);
+        else if (readGetlineFdsResult > 0) {
+            if ((nread = getline(&inputLine, &size, stdin)) != -1) {
+                if (sdbm(inputLine) == sdbm("/quit\n")) {
+                    free(inputLine);
+                    close(connectFd);
+                    writeft(logFd, "getline exit\n", "client");
+                    exit(EXIT_SUCCESS);
+                }
+                snprintf(buffMsg, sizeof(buffMsg), "%s", inputLine);
+                write(connectFd, buffMsg, MSGMLEN);
+            }
         }
 
-//        input_line = truncate(input_line, MSGMLEN);
+        if (readServFdsResult < 0) {
 
-        if (sdbm(input_line) == sdbm("/quit\n")) {
-            free(input_line);
-            fclose(stream);
-            close(conn_fd);
-            exit(EXIT_SUCCESS);
+        }
+        else if (readServFdsResult == 0) {
+
+        }
+        else if (readServFdsResult > 0) {
+            if (readServFds[0].fd & POLLIN) {
+                
+            }
         }
 
         
-
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /* sleep(15);
-        snprintf(msgbuffer, sizeof(msgbuffer), "How is the weather today haha? I'm %s by the way.\n", cl_ip_str);
-        send(conn_fd, msgbuffer, sizeof(msgbuffer), 0); */
     }
 
 
