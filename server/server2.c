@@ -169,10 +169,7 @@ int main(int argc, char **argv) {
                     case -1:
                         break;
                     case 0:
-                        snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
-                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliActorStr);
-                        writeft(logFd, buffLogs, cliActorStr);
-
+                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliActorStr); 
                         memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
                         delete_b_socket(pCurUser);
                         curOnline--;
@@ -180,8 +177,18 @@ int main(int argc, char **argv) {
                         break;
                     default:
                         buffMsg[MSGMLEN - 1] = '\0';    
-                        snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
+                        snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort); 
+
+
+                        parcelSize = closest_pow2(2 + sizeof(buffMsg) + sizeof(cliActorStr));
+                        char *parcel = malloc(parcelSize);
+                        anm_create_msg(parcel, parcelSize, cliActorStr, buffMsg);
+                        //write(readFromCliFds[i].fd, parcel, parcelSize);
+                        write(readFromCliFds[i].fd, "parcel", 7);
                         writeft(logFd, buffMsg, cliActorStr);
+                        free(parcel);
+                        //snprintf(cliActorStr, sizeof(cliActorStr), "%s:%u", cliIpStr, cliPort);
+                        //writeft(logFd, buffMsg, cliActorStr);
                         break;
                     }
                     

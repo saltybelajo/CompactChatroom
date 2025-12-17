@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
                                                                                         /* connecting to the server */
     char buffMsg[MSGMLEN];
     connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr)); 
+    int n = listen(connectFd, 1024);
     int tmpFlags = fcntl(connectFd, F_GETFL, 0);
     if (fcntl(connectFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
         write(2, "fcntl failed\n", 14);
@@ -60,7 +61,7 @@ int main(int argc, char **argv) {
     readServFds[0].events = POLLIN | POLLPRI;
     
     
-    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %s.\n", cliIpStr);
+    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %ssqssqsqsqsqsqsqsqsqssqsqsqsqsqs.\n", cliIpStr);
     write(connectFd, buffMsg, sizeof(buffMsg));
     //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
     //printf("Type /quit to shut down.\n");
@@ -118,6 +119,16 @@ int main(int argc, char **argv) {
         }
         else if (readServFdsResult > 0) {
             if (readServFds[0].fd & POLLIN) {
+                writeft(logFd, "here\n", "sas");
+                int n = read(readServFds[0].fd, buffMsg, MSGMLEN);
+                if (n > 0) {
+                    char *corrActor = malloc(pow(2, buffMsg[0]));
+                    char *corrMsg = malloc(pow(2, buffMsg[1]));
+
+                    anm_receive_msg(buffMsg, corrActor, corrMsg);
+                    writeft(logFd, corrMsg, corrActor);
+                    //writeft()
+                }
                 
             }
         }
