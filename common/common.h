@@ -13,22 +13,26 @@
 #include "uthash.h"
 #include <poll.h>
 #include <math.h>
+#include <sys/stat.h>
+#include <sys/sysmacros.h>
+#include <dirent.h>
 
-#define MSGMLEN 512
-#define AUTHORMLEN 32
+#define MSGMLEN 127
+#define PARCELMLEN 255
+#define AUTHORMLEN 31
 #define CLIENTCAP 16
 
-int writeft(int fd, char *msgbuf, char *actor);
+int writeft(int fd, char *msgbuf, char *author);
 
 unsigned long sdbm(char *str);
 
 int getlsocket(char *ipAddr, uint16_t port);
 // char *truncate(char *str, unsigned int size);
 
-typedef struct actorMessage {
-    char *actor;
+typedef struct authorMessage {
+    char *author;
     char *message;
-} actorMessage;
+} authorMessage;
 
 unsigned long closest_pow2(int v);
 

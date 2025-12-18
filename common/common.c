@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-int writeft(int fd, char *msgbuf, char *actor)
+int writeft(int fd, char *msgbuf, char *author)
 {
     char datetime_str[128];
 
@@ -27,7 +27,7 @@ int writeft(int fd, char *msgbuf, char *actor)
 
     char finoutput[1024];
     memset(finoutput, '\0', sizeof(finoutput));
-    snprintf(finoutput, sizeof(finoutput) - 1, "%s %s: %s", datetime_str, actor, msgbuf);
+    snprintf(finoutput, sizeof(finoutput) - 1, "%s %s: %s", datetime_str, author, msgbuf);
     write(fd, finoutput, sizeof(finoutput));
 
 
