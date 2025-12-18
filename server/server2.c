@@ -21,16 +21,36 @@ int main(int argc, char **argv) {
     if (argc >= 2) {
         inputServIp = argv[1];
     }
-
-    int logFd;
-    if ((logFd = open(SERVLOGPATH, O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
-        printf("%s", strerror(errno));
-        exit(EXIT_FAILURE);
+                                                                                            /* opening the log dir+file */
+    
+    int logFd;   
+    int d0 = 0;                                                                                         
+    char *logDirPath = "../logs/";                                                                                            
+    DIR *logDir = opendir(logDirPath);
+    if (logDir != NULL) {
+        // directory exists
     }
     else {
-        snprintf(buffLogs, MSGMLEN, "Log file accessed, path: %s\n", SERVLOGPATH);
-        writeft(logFd, buffLogs, inputServIp);
+        int d0 = mkdir("../logs/", 0777);
+        if (d0 < 0) {
+            printf("Error: failed to open/create a log directory./n");
+        }
     }
+
+    if (d0 == 0) {
+        if ((logFd = open(SERVLOGPATH, O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
+        printf("%s", strerror(errno));
+        exit(EXIT_FAILURE);
+        }
+        else {
+            snprintf(buffLogs, MSGMLEN, "Log file accessed, path: %s\n", SERVLOGPATH);
+            writeft(logFd, buffLogs, inputServIp);
+        }
+    }
+    
+        
+    
+    
     snprintf(buffLogs, MSGMLEN, "Starting... Server's IP Address: %s, Inbound Port: %u.\n", inputServIp, inputServPort);
     writeft(logFd, buffLogs, inputServIp);
 
