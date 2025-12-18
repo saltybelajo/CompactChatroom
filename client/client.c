@@ -27,6 +27,9 @@ int main(int argc, char **argv) {
     int logFd;
     logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
 
+    snprintf(buffLogs, MSGMLEN, "Logs accessed.\n");
+    writeft(logFd, buffLogs, cliIpStr);
+
     memset(&servAddr, '\0', sizeof(servAddr));                                                  /* getting servers actual IP address*/
     servAddr.sin_family = AF_INET;
     servAddr.sin_port = htons(inputServPort);
@@ -50,8 +53,9 @@ int main(int argc, char **argv) {
 
                                                                                         /* connecting to the server */
     char buffMsg[MSGMLEN];
+    memset(buffMsg, 0, MSGMLEN);
+    char buffPrc[PARCELMLEN];
     connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr)); 
-    int n = listen(connectFd, 1024);
     int tmpFlags = fcntl(connectFd, F_GETFL, 0);
     if (fcntl(connectFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
         write(2, "fcntl failed\n", 14);
@@ -61,8 +65,9 @@ int main(int argc, char **argv) {
     readServFds[0].events = POLLIN | POLLPRI;
     
     
-    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %ssqssqsqsqsqsqsqsqsqssqsqsqsqsqs.\n", cliIpStr);
-    write(connectFd, buffMsg, sizeof(buffMsg));
+    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %s.\n", cliIpStr);
+    int n2 = sizeof(buffMsg);
+    write(connectFd, buffMsg, n2);
     //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
     //printf("Type /quit to shut down.\n");
     
@@ -71,11 +76,6 @@ int main(int argc, char **argv) {
     size_t size;
     ssize_t nread;
     char *inputLine;
-    /* tmpFlags = fcntl(0, F_GETFL, 0);
-    if (fcntl(0, tmpFlags | O_NONBLOCK) == -1) {
-        writeft(logFd, "stdin fuckup\n", "client");
-        exit(EXIT_FAILURE);
-    } */
     readGetlineFds[0].fd = 0;
     readGetlineFds[0].events = POLLIN | POLLPRI;
 
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
                 write(connectFd, buffMsg, MSGMLEN);
             }
         }
-
+                                                                                                /* readServFds poll */
         if (readServFdsResult < 0) {
 
         }
@@ -118,15 +118,16 @@ int main(int argc, char **argv) {
 
         }
         else if (readServFdsResult > 0) {
-            if (readServFds[0].fd & POLLIN) {
-                writeft(logFd, "here\n", "sas");
-                int n = read(readServFds[0].fd, buffMsg, MSGMLEN);
+            if (readServFds[0].fd > 0 && readServFds[0].revents & POLLIN) {
+                int n = read(readServFds[0].fd, buffPrc, PARCELMLEN);
                 if (n > 0) {
-                    char *corrActor = malloc(pow(2, buffMsg[0]));
-                    char *corrMsg = malloc(pow(2, buffMsg[1]));
+                    char *recvAuthor = malloc(AUTHORMLEN);
+                    char *recvPayload = malloc(MSGMLEN);
 
-                    anm_receive_msg(buffMsg, corrActor, corrMsg);
-                    writeft(logFd, corrMsg, corrActor);
+                    anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
+                    writeft(logFd, recvPayload, recvAuthor);
+                    free(recvAuthor);
+                    free(recvPayload);
                     //writeft()
                 }
                 
