@@ -2,18 +2,26 @@
 
 #include "c_aux.h"
 
-int anm_receive_msg(char *parcel, char *allocActor, char *allocMsg) {
-    int actorBits = parcel[0] - '0';
-    int msgBits = parcel[1] - '0';
+int anm_deconstruct_msg(char *parcel, char *allocAuthor, char *allocPayload) {
+    
+    uint8_t parcelSize = parcel[0];
+    char *parcelCopy = malloc(parcelSize);
+    strncpy(parcelCopy, parcel, parcelSize);
+    parcelCopy += 1;
 
-    size_t actorSize = (int)pow(2, actorBits);
-    size_t msgSize = (int)pow(2, msgBits);
+    uint8_t authorSize = 0;
+    for (int i = 0; parcelCopy[i] != '^' || i < parcelSize; i++) {
+        allocAuthor[i] = parcelCopy[i];
+        authorSize++;
+    }
+    allocAuthor[authorSize - 1] = 0;
 
-    char *parcel2 = parcel + 2;
-    char *parcel3 = parcel2 + actorSize;
-
-    strncpy(allocActor, parcel2, actorSize);
-    strncpy(allocMsg, parcel3, msgSize);
+    parcelCopy += authorSize + 1;
+    uint8_t payloadSize = 0;
+    for (int i = 0; parcelCopy[i] != 0 || i < parcelSize; i++) {
+        allocPayload[i] = parcelCopy[i];
+        authorSize++;
+    }
 
     return(1);
 }
