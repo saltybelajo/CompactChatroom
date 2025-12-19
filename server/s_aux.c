@@ -60,3 +60,16 @@ int anm_construct_msg(char *allocd, int size_alloc, char *author, char *payload)
 }
 
 
+int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSize) {
+    int sendCounter = 0;
+    for (int i = 0; i < fdsSize; i++) {
+        if (fds[i].fd > 0 && fds[i].revents & POLLOUT) {
+            int n0 = write(fds[i].fd, parcel, parcelSize);
+            printf("%d bytes message sent.\n", n0);
+            sendCounter++;
+        }
+        return sendCounter;
+    }
+}
+
+

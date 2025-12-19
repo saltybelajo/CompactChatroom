@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
                             exit(EXIT_FAILURE);
                         }
                         readFromCliFds[availIndexInreadFromCliFds].fd = connFd;
-                        readFromCliFds[availIndexInreadFromCliFds].events = POLLIN | POLLPRI;
+                        readFromCliFds[availIndexInreadFromCliFds].events = POLLIN | POLLPRI | POLLOUT;
                         tmpFlags = fcntl(connFd, F_GETFL, 0);
                         if (fcntl(connFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
                             perror("fcntl");
@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
                         break;
                     case 0:
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliAuthorStr); 
+                        writeft(logFd, buffLogs, inputServIp);
                         memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
                         delete_b_socket(pCurUser);
                         curOnline--;
@@ -201,8 +202,11 @@ int main(int argc, char **argv) {
 
                         char *parcel = malloc(PARCELMLEN);
                         anm_construct_msg(parcel, PARCELMLEN, cliAuthorStr, buffMsg);
-                        write(readFromCliFds[i].fd, parcel, PARCELMLEN);
-                        writeft(logFd, parcel, cliAuthorStr);
+
+                                                                            /* send the message to all the clients */
+                        int c1 = broadcast(readFromCliFds, sizeof(readFromCliFds)/sizeof(readFromCliFds[0]), parcel, PARCELMLEN);
+                        printf("%d message(s) sent out.\n", c1);
+                        writeft(logFd, buffMsg, cliAuthorStr);
                         free(parcel);
                         break;
                     }
