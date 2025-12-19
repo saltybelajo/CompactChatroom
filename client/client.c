@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     int logFd;
     logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
 
-    snprintf(buffLogs, MSGMLEN, "Logs accessed.\n");
+    snprintf(buffLogs, MSGMLEN, "Logs accessed. Path: ./clilog1.txt\n");
     writeft(logFd, buffLogs, cliIpStr);
 
     memset(&servAddr, '\0', sizeof(servAddr));                                                  /* getting servers actual IP address*/
