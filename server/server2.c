@@ -102,7 +102,6 @@ int main(int argc, char **argv) {
             
         }          
         else if (acceptSockFdsResult > 0) {
-            printf("in here\n");
             for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
                 {
                     printf("listeSockarr size %lu\n", sizeof(acceptSockFds)/sizeof(acceptSockFds[0]));
@@ -158,7 +157,6 @@ int main(int argc, char **argv) {
         }
         else if (readFromCliFdsResult == 0) {
             continue;
-            printf("here\n");
         }
         else {
             
@@ -190,6 +188,7 @@ int main(int argc, char **argv) {
                         break;
                     case 0:
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliAuthorStr); 
+                        broadcast(readFromCliFds, sizeof(readFromCliFds)/sizeof(readFromCliFds[0]), buffLogs, PARCELMLEN);
                         writeft(logFd, buffLogs, inputServIp);
                         memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
                         delete_b_socket(pCurUser);

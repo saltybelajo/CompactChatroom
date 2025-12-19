@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     readServFds[0].events = POLLIN | POLLPRI;
     
     
-    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am %s.\n", cliIpStr);
+    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n", cliIpStr);
     int n2 = sizeof(buffMsg);
     write(connectFd, buffMsg, n2);
     //printf("Connected to: %s:%u\n", inputServIp, inputServPort);

@@ -68,8 +68,9 @@ int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSiz
             printf("%d bytes message sent.\n", n0);
             sendCounter++;
         }
-        return sendCounter;
+        
     }
+    return sendCounter;
 }
 
 
