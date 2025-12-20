@@ -131,6 +131,22 @@ int write_to_user(int fd, char *msgbuf, char *author)
 
 }
 
+char *resolve_my_ip_address() {
+
+    char hostBuffer[256];
+    char *IPBuffer;
+    struct hostent *hostEntry;
+    int hostName;
+
+    hostName = gethostname(hostBuffer, 256);
+    hostEntry = gethostbyname(hostBuffer);
+    //inet_ntop(AF_INET, (struct in_addr *) hostEntry->h_addr_list[0], IPBuffer, 256);
+    IPBuffer = inet_ntoa(*((struct in_addr*) hostEntry->h_addr_list[0]));
+
+    return IPBuffer;
+
+}
+
 /* char *truncate(char *str, unsigned int size) {
 
     if (strnlen(str, size) > size - 1) {

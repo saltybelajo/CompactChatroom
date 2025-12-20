@@ -16,6 +16,9 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <dirent.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/types.h>
 
 #define MSGMLEN 127
 #define PARCELMLEN 255
@@ -37,5 +40,7 @@ typedef struct authorMessage {
 unsigned long closest_pow2(int v);
 
 int write_to_user(int fd, char *msgbuf, char *author);
+
+char *resolve_my_ip_address();
 
 #endif

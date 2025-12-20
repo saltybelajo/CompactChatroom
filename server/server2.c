@@ -97,7 +97,6 @@ int main(int argc, char **argv) {
         int acceptSockFdsResult = poll(acceptSockFds, 1, 200);
         int readFromCliFdsResult = poll(readFromCliFds, curOnline, 200); 
         
-        //printf("readFromCliFdsResult = %i; acceptSockFdsResult = %i.\n", readFromCliFdsResult, acceptSockFdsResult);
 
 
                                                                                     /* acceptSockFds */
@@ -110,7 +109,6 @@ int main(int argc, char **argv) {
         else if (acceptSockFdsResult > 0) {
             for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
                 {
-                    printf("listeSockarr size %lu\n", sizeof(acceptSockFds)/sizeof(acceptSockFds[0]));
 
                     if (acceptSockFds[i].revents & POLLIN) {
 
@@ -143,6 +141,7 @@ int main(int argc, char **argv) {
                             write(0, "No available space found in readFromCliFds[]!\n", 47);
                             exit(EXIT_FAILURE);
                         }
+                        printf("Avail fd found: %d\n", availIndexInreadFromCliFds);
                         readFromCliFds[availIndexInreadFromCliFds].fd = connFd;
                         readFromCliFds[availIndexInreadFromCliFds].events = POLLIN | POLLPRI | POLLOUT;
                         tmpFlags = fcntl(connFd, F_GETFL, 0);
@@ -168,7 +167,7 @@ int main(int argc, char **argv) {
             
             for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++)                                        /* check the sockets for read() */   
             {
-                if (readFromCliFds[i].fd > 0 && readFromCliFds[i].revents & POLLIN) //  
+                if (readFromCliFds[i].fd > 0) //  && readFromCliFds[i].revents & POLLIN
                 {
                     
                     char buffMsg[MSGMLEN];
@@ -187,32 +186,45 @@ int main(int argc, char **argv) {
                     cliPort = ntohs(cliAddr.sin_port); 
                                                                 
 
-                    int n = read(readFromCliFds[i].fd, buffMsg, MSGMLEN);
+                    int n = read(cliFd, buffMsg, MSGMLEN);
                     switch (n)
                     {
                     case -1:
                         break;
                     case 0:
+                        char *parcel = malloc(PARCELMLEN);
+
+                        snprintf(cliAuthorStr, sizeof(cliAuthorStr), "%s:%u", cliIpStr, cliPort);
                         snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliAuthorStr); 
-                        broadcast(readFromCliFds, sizeof(readFromCliFds)/sizeof(readFromCliFds[0]), buffLogs, PARCELMLEN);
-                        writeft(logFd, buffLogs, inputServIp);
-                        memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
+
+                        //memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
+                        readFromCliFds[i].fd = 0;
+                        readFromCliFds[i].events = 0;
+                        readFromCliFds[i].revents = 0;
                         delete_b_socket(pCurUser);
                         curOnline--;
-                        close(connFd);
+                        close(cliFd);
+
+                        anm_construct_msg(parcel, PARCELMLEN, inputServIp, buffLogs);
+                        broadcast(readFromCliFds, CLIENTCAP, parcel, PARCELMLEN);
+                        writeft(logFd, buffLogs, inputServIp);
+                        free(parcel);
+
+
+                        
                         break;
                     default:
                         buffMsg[MSGMLEN - 1] = '\0';    
                         snprintf(cliAuthorStr, sizeof(cliAuthorStr), "%s:%u", cliIpStr, cliPort); 
 
-                        char *parcel = malloc(PARCELMLEN);
-                        anm_construct_msg(parcel, PARCELMLEN, cliAuthorStr, buffMsg);
+                        char *parcel2 = malloc(PARCELMLEN);
+                        anm_construct_msg(parcel2, PARCELMLEN, cliAuthorStr, buffMsg);
 
                                                                             /* send the message to all the clients */
-                        int c1 = broadcast(readFromCliFds, sizeof(readFromCliFds)/sizeof(readFromCliFds[0]), parcel, PARCELMLEN);
+                        int c1 = broadcast(readFromCliFds, CLIENTCAP, parcel2, PARCELMLEN);
                         printf("%d message(s) sent out.\n", c1);
                         writeft(logFd, buffMsg, cliAuthorStr);
-                        free(parcel);
+                        free(parcel2);
                         break;
                     }
                     

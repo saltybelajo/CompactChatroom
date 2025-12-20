@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
     struct sockaddr_in servAddr;
 
     char *inputServIp = "127.0.0.1";
-    char *cliIpStr = "192.168.0.19";
+    char *cliIpStr = resolve_my_ip_address();
     uint16_t inputServPort = 9877;
 
     char buffLogs[MSGMLEN];
@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
     startup_text();
+    printf("Client IP addr:   %s\n", cliIpStr);
 
     int logFd;
     logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
@@ -70,9 +71,9 @@ int main(int argc, char **argv) {
 
     if (connectFd > 0) {
         strncpy(c0, inputServIp, INET_ADDRSTRLEN);
-        printf("Connected to: %s:%u\n", c0, inputServPort);
+        printf("Connected to:     %s:%u\n", c0, inputServPort);
     }
-    printf("Log path:     %s\n\n", "clilog1.txt");
+    printf("Log path:         %s\n\n", "clilog1.txt");
     
     
     snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n");
