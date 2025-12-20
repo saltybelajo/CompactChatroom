@@ -23,10 +23,10 @@ int main(int argc, char **argv) {
 
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
+    startup_text();
 
     int logFd;
     logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
-
     snprintf(buffLogs, MSGMLEN, "Logs accessed. Path: ./clilog1.txt\n");
     writeft(logFd, buffLogs, cliIpStr);
 
@@ -51,6 +51,10 @@ int main(int argc, char **argv) {
 
     connectFd = socket(AF_INET, SOCK_STREAM, 0);
 
+    char *c0 = malloc(64);
+    memset(c0, 0, 64);
+    c0[0] = '?';
+    c0[1] = '\n';
                                                                                         /* connecting to the server */
     char buffMsg[MSGMLEN];
     memset(buffMsg, 0, MSGMLEN);
@@ -63,9 +67,15 @@ int main(int argc, char **argv) {
     }
     readServFds[0].fd = connectFd;
     readServFds[0].events = POLLIN | POLLPRI;
+
+    if (connectFd > 0) {
+        strncpy(c0, inputServIp, INET_ADDRSTRLEN);
+        printf("Connected to: %s:%u\n", c0, inputServPort);
+    }
+    printf("Log path:     %s\n\n", "clilog1.txt");
     
     
-    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n", cliIpStr);
+    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n");
     int n2 = sizeof(buffMsg);
     write(connectFd, buffMsg, n2);
     //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
@@ -126,6 +136,7 @@ int main(int argc, char **argv) {
 
                     anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
                     writeft(logFd, recvPayload, recvAuthor);
+                    write_to_user(1, recvPayload, recvAuthor);
                     free(recvAuthor);
                     free(recvPayload);
                     //writeft()

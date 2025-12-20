@@ -27,3 +27,15 @@ int anm_deconstruct_msg(char *parcel, char *allocAuthor, char *allocPayload) {
 
     return 1;
 }
+
+void startup_text() {
+    char *s0 = "CompactChatroom-Client v1.0 on Linux.\n";
+    printf("%s", s0);
+    printf("\n");
+
+    uint32_t len0 = strnlen(s0, 1024);
+    char *s1 = malloc(len0 - 1);
+    memset(s1, '#', len0 - 1);
+    printf("%s\n\n", s1);
+
+}

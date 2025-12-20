@@ -36,4 +36,6 @@ typedef struct authorMessage {
 
 unsigned long closest_pow2(int v);
 
+int write_to_user(int fd, char *msgbuf, char *author);
+
 #endif
