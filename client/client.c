@@ -111,15 +111,15 @@ int main(int argc, char **argv) {
 
         }
         else if (readGetlineFdsResult > 0) {
-            if ((nread = getline(&inputLine, &size, stdin)) != -1) {
+            if ((nread = getline(&inputLine, &size, stdin)) > 0) {
                 if (sdbm(inputLine) == sdbm("/quit\n")) {
                     free(inputLine);
                     close(connectFd);
                     writeft(logFd, "getline exit\n", "client");
                     exit(EXIT_SUCCESS);
                 }
-                snprintf(buffMsg, sizeof(buffMsg), "%s", inputLine);
-                write(connectFd, buffMsg, MSGMLEN);
+                //snprintf(buffMsg, sizeof(buffMsg), "%s", inputLine);
+                write(connectFd, inputLine, nread);
             }
         }
                                                                                                 /* readServFds poll */
