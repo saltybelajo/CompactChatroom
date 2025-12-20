@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
         }
         else if (readServFdsResult > 0) {
             if (readServFds[0].fd > 0 && readServFds[0].revents & POLLIN) {
+                memset(buffPrc, 0, PARCELMLEN);
                 int n = read(readServFds[0].fd, buffPrc, PARCELMLEN);
                 if (n > 0) {
                     char *recvAuthor = malloc(AUTHORMLEN);
