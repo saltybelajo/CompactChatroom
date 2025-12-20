@@ -21,5 +21,5 @@ b_socket *find_b_socket(int fd);
 void delete_b_socket(b_socket *sock);
 int anm_construct_msg(char *allocd, int size_alloc, char *author, char *payload);
 int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSize);
-
+void startup_text();
 #endif

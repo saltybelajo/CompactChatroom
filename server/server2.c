@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
 
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
+    startup_text();
 
     char *inputServIp = "127.0.0.1";
     unsigned short inputServPort = 9877;  
@@ -23,6 +24,10 @@ int main(int argc, char **argv) {
     }
                                                                                             /* opening the log dir+file */
     
+    printf("IPv4 address: %s\n", inputServIp);
+    printf("Port:         %u\n", inputServPort);
+    
+
     int logFd;   
     int d0 = 0;                                                                                         
     char *logDirPath = "../logs/";                                                                                            
@@ -43,6 +48,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
         }
         else {
+            printf("Log path:     %s\n", SERVLOGPATH);
             snprintf(buffLogs, MSGMLEN, "Log file accessed, path: %s\n", SERVLOGPATH);
             writeft(logFd, buffLogs, inputServIp);
         }
