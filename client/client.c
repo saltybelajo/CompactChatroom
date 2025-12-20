@@ -76,9 +76,10 @@ int main(int argc, char **argv) {
     printf("Log path:         %s\n\n", "clilog1.txt");
     
     
-    snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n");
+    //snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n");
+    char *hello = "Hello. I am a client.\n";
     int n2 = sizeof(buffMsg);
-    write(connectFd, buffMsg, n2);
+    write(connectFd, hello, 23);
     //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
     //printf("Type /quit to shut down.\n");
     
