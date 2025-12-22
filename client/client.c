@@ -134,8 +134,11 @@ int main(int argc, char **argv) {
                 memset(buffPrc, 0, PARCELMLEN);
                 int n = read(readServFds[0].fd, buffPrc, PARCELMLEN);
                 if (n > 0) {
+
                     char *recvAuthor = malloc(AUTHORMLEN);
+                    memset(recvAuthor, 0, AUTHORMLEN);
                     char *recvPayload = malloc(MSGMLEN);
+                    memset(recvPayload, 0, MSGMLEN);
 
                     anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
                     writeft(logFd, recvPayload, recvAuthor);
