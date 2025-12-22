@@ -64,7 +64,7 @@ int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSiz
     int sendCounter = 0;
     for (int i = 0; i < fdsSize; i++) {
         if (fds[i].fd > 0) {
-            printf("sending a parcel to fds[%d].fd\n", i);
+//            printf("sending a parcel to fds[%d].fd\n", i);
             int n0 = write(fds[i].fd, parcel, parcelSize);
             sendCounter++;
         }

@@ -127,8 +127,14 @@ int main(int argc, char **argv) {
 
                         inet_ntop(AF_INET, (struct sockaddr *) &pCurUser->addr.sin_addr.s_addr, cliIpStr, INET_ADDRSTRLEN); /* cliIpStr init */
                         cliPort = ntohs(pCurUser->addr.sin_port);
-                        snprintf(buffLogs, MSGMLEN, "Accepted a connection from: %s:%u. Socket: %i.\n", cliIpStr, cliPort, connFd); 
+                        snprintf(buffLogs, MSGMLEN, "Accepted a connection from: %s:%u. Socket: %i.\n", cliIpStr, cliPort, connFd);
+
                         writeft(logFd, buffLogs, inputServIp);
+                        snprintf(buffLogs, MSGMLEN, "%s:%u has joined.\n", cliIpStr, cliPort);
+                        char *p2 = malloc(PARCELMLEN);
+                        anm_construct_msg(p2, PARCELMLEN, inputServIp, buffLogs);
+                        broadcast(readFromCliFds, CLIENTCAP, p2, PARCELMLEN);
+                        free(p2);
 
                         int availIndexInreadFromCliFds = -1;
                         for (int j = 0; j < CLIENTCAP; j++) {
@@ -223,7 +229,7 @@ int main(int argc, char **argv) {
 
                                                                             /* send the message to all the clients */
                         int c1 = broadcast(readFromCliFds, CLIENTCAP, parcel2, PARCELMLEN);
-                        printf("%d message(s) sent out.\n", c1);
+//                        printf("%d message(s) sent out.\n", c1);
                         writeft(logFd, buffMsg, cliAuthorStr);
                         free(parcel2);
                         break;
