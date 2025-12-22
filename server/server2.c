@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
         }
         else {
-            printf("Log path:     %s\n", SERVLOGPATH);
+            printf("Log path:     %s\n\n", SERVLOGPATH);
             snprintf(buffLogs, MSGMLEN, "Log file accessed, path: %s\n", SERVLOGPATH);
             writeft(logFd, buffLogs, inputServIp);
         }
@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
                 {
                     
                     char buffMsg[MSGMLEN];
+                    memset(buffMsg, 0, MSGMLEN);
                     char cliIpStr[INET_ADDRSTRLEN];
                     char cliAuthorStr[AUTHORMLEN];
                     int cliFd = readFromCliFds[i].fd;
