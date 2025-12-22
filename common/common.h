@@ -19,6 +19,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/types.h>
+#include <cjson/cJSON.h>
 
 #define MSGMLEN 127
 #define PARCELMLEN 255

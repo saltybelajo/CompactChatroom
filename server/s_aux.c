@@ -85,4 +85,70 @@ void startup_text() {
 
 }
 
+int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const char * const pathToJson) {
+
+    const cJSON *serveripaddress;
+    const cJSON *serverport;
+
+    int fd = open(pathToJson, O_RDONLY, 0644);
+    if (fd < 0) {
+        printf("get_server_specs(): failed opening the .json file.\n");
+        return -1;
+    }
+
+    char *monitorString = malloc(1024);
+    char a = 'a';
+
+    for (int i = 0; a != 0; i++) {
+        int r0 = read(fd, &a, 1);
+        if (r0 == -1) {
+            printf("get_server_specs(): read returned -1.");
+            return -1;
+        }
+        monitorString[i] = a;
+    }
+
+    if (monitorString == 0) {
+        printf("get_server_specs(): monitorString is NULL.\n");
+        return(-1);
+    }
+
+    cJSON *monitorJson = cJSON_Parse(monitorString);
+    if (monitorJson == NULL)
+    {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL)
+        {
+            fprintf(stderr, "Error before: %s\n", error_ptr);
+        }
+        goto end;
+    }
+
+    serveripaddress = cJSON_GetObjectItemCaseSensitive(monitorJson, "serveripaddress");
+    if (cJSON_IsString(serveripaddress) && (serveripaddress->valuestring != NULL))
+    {
+        strncpy(ip, serveripaddress->valuestring, ipSize);
+    }
+    else {
+        printf("get_server_specs(): error parsing a string.\n");
+        return -1;
+    }
+    
+    if (sizeof(serverport->valueint) <= portSize) {
+        *port = serverport->valueint;
+    }
+    else {
+        printf("get_server_specs(): error parsing an int.\n");
+        return -1;
+    }
+
+
+
+
+    end:
+        cJSON_Delete(monitorJson);
+        return 1;
+
+}
+
 

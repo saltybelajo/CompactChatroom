@@ -17,9 +17,17 @@ typedef struct b_socket {
 extern b_socket *curUsers;
 
 void add_b_socket(int fd, struct sockaddr_in addr);
+
 b_socket *find_b_socket(int fd);
+
 void delete_b_socket(b_socket *sock);
+
 int anm_construct_msg(char *allocd, int size_alloc, char *author, char *payload);
+
 int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSize);
+
 void startup_text();
+
+int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const char * const pathToJson);
+
 #endif

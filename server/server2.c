@@ -4,7 +4,7 @@
 
 
 
-int main(int argc, char **argv) {
+int main(void) {
 
     int acceptFd, connFd;
     struct sockaddr_in servAddr;
@@ -15,13 +15,21 @@ int main(int argc, char **argv) {
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
     startup_text();
+    
 
-    char *inputServIp = "127.0.0.1";
-    unsigned short inputServPort = 9877;  
+    char inputServIp[INET_ADDRSTRLEN];
+    unsigned short inputServPort;  
 
-    if (argc >= 2) {
-        inputServIp = argv[1];
+    const char * const pathToJson = "config.json";
+    int g0 = get_server_specs(inputServIp, INET_ADDRSTRLEN, &inputServPort, sizeof(inputServPort), pathToJson);
+    if (g0 < 0) {
+        printf("main(): error parsing config.json\n");
+        exit(EXIT_FAILURE);
     }
+
+/*    if (argc >= 2) {
+        inputServIp = argv[1];
+    } */
                                                                                             /* opening the log dir+file */
     
     printf("IPv4 address: %s\n", inputServIp);
@@ -217,8 +225,6 @@ int main(int argc, char **argv) {
                         writeft(logFd, buffLogs, inputServIp);
                         free(parcel);
 
-
-                        
                         break;
                     default:
                         buffMsg[MSGMLEN - 1] = '\0';    
@@ -226,7 +232,6 @@ int main(int argc, char **argv) {
 
                         char *parcel2 = malloc(PARCELMLEN);
                         anm_construct_msg(parcel2, PARCELMLEN, cliAuthorStr, buffMsg);
-
                                                                             /* send the message to all the clients */
                         int c1 = broadcast(readFromCliFds, CLIENTCAP, parcel2, PARCELMLEN);
 //                        printf("%d message(s) sent out.\n", c1);

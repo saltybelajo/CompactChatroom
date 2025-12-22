@@ -118,7 +118,6 @@ int main(int argc, char **argv) {
                     writeft(logFd, "getline exit\n", "client");
                     exit(EXIT_SUCCESS);
                 }
-                //snprintf(buffMsg, sizeof(buffMsg), "%s", inputLine);
                 write(connectFd, inputLine, nread);
             }
         }
@@ -145,7 +144,7 @@ int main(int argc, char **argv) {
                     write_to_user(1, recvPayload, recvAuthor);
                     free(recvAuthor);
                     free(recvPayload);
-                    //writeft()
+
                 }
                 
             }

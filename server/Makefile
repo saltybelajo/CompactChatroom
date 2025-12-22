@@ -8,10 +8,10 @@ DEPS = s_aux.h
 all: server2 server
 
 server2: server2.o s_aux.o ../common/common.o
-	$(CC) -o server2 server2.o s_aux.o ../common/common.o -lm
+	$(CC) -o server2 server2.o s_aux.o ../common/common.o -lm -L/usr/local/lib/cJSON -l:libcjson.a
 
 server: server.o s_aux.o ../common/common.o
-	$(CC) -o server server.o s_aux.o ../common/common.o -lm
+	$(CC) -o server server.o s_aux.o ../common/common.o -lm -L/usr/local/lib/cJSON -l:libcjson.a
 
 clean:
 	rm server.o server2.o s_aux.o ../common/common.o server server2
