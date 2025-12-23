@@ -1,3 +1,6 @@
 [submodule "cJSON"]
 	path = common/cJSON
 	url = https://github.com/DaveGamble/cJSON
+[submodule "common/uthash"]
+	path = common/uthash
+	url = https://github.com/troydhanson/uthash
