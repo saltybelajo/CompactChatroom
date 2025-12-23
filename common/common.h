@@ -19,7 +19,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/types.h>
-#include <cjson/cJSON.h>
+#include <../common/cJSON/cJSON.h>
 #include <sys/mman.h>
 
 #define MSGMLEN 127
