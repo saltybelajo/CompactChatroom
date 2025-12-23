@@ -21,7 +21,7 @@ int main(void) {
     unsigned short inputServPort;  
 
     const char * const pathToJson = "config.json";
-    int g0 = get_server_specs(inputServIp, INET_ADDRSTRLEN, &inputServPort, sizeof(inputServPort), pathToJson);
+    int g0 = get_server_specs(inputServIp, INET_ADDRSTRLEN, &inputServPort, pathToJson);
     if (g0 < 0) {
         printf("main(): error parsing config.json\n");
         exit(EXIT_FAILURE);

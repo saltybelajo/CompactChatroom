@@ -85,7 +85,7 @@ void startup_text() {
 
 }
 
-int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const char * const pathToJson) {
+int get_server_specs(char *ip, int ipSize, uint16_t *port, const char * const pathToJson) {
 
     const cJSON *serveripaddress;
     const cJSON *serverport;
@@ -96,17 +96,21 @@ int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const c
         return -1;
     }
 
-    char *monitorString = malloc(1024);
-    char a = 'a';
-
-    for (int i = 0; a != 0; i++) {
-        int r0 = read(fd, &a, 1);
-        if (r0 == -1) {
-            printf("get_server_specs(): read returned -1.");
-            return -1;
-        }
-        monitorString[i] = a;
+    struct stat statOfFd;
+    if (fstat(fd, &statOfFd) < 0) {
+        printf("get_server_specs(): fstat() issue.\n");
+        return -1;
     }
+
+    size_t fileSize = statOfFd.st_size;
+
+    char *am0 = malloc(fileSize);
+    char *monitorString = malloc(fileSize); 
+    char *am1 = monitorString;
+    monitorString = mmap(am0, fileSize, PROT_READ, MAP_SHARED, fd, 0);
+    
+    close(fd);
+    
 
     if (monitorString == 0) {
         printf("get_server_specs(): monitorString is NULL.\n");
@@ -133,8 +137,9 @@ int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const c
         printf("get_server_specs(): error parsing a string.\n");
         return -1;
     }
-    
-    if (sizeof(serverport->valueint) <= portSize) {
+
+    serverport = cJSON_GetObjectItemCaseSensitive(monitorJson, "serverport");
+    if (serverport->valueint <= 65535) {
         *port = serverport->valueint;
     }
     else {
@@ -147,6 +152,8 @@ int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const c
 
     end:
         cJSON_Delete(monitorJson);
+        free(am0);
+        free(am1);
         return 1;
 
 }

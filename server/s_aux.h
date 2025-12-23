@@ -28,6 +28,6 @@ int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSiz
 
 void startup_text();
 
-int get_server_specs(char *ip, int ipSize, uint16_t *port, int portSize, const char * const pathToJson);
+int get_server_specs(char *ip, int ipSize, uint16_t *port, const char * const pathToJson);
 
 #endif
