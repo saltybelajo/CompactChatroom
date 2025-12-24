@@ -77,6 +77,9 @@ void startup_text() {
     char *s0 = "CompactChatroom-Server v1.0 on Linux.\n";
     printf("%s", s0);
     printf("\n");
+    char *cmdList = "Commands: /online, /clients, /quit.\n";
+    printf("%s", cmdList);
+    printf("\n");
 
     uint32_t len0 = strnlen(s0, 1024);
     char *s1 = malloc(len0 - 1);

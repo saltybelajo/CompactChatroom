@@ -171,7 +171,7 @@ int main(void) {
                             write(0, "No available space found in readFromCliFds[]!\n", 47);
                             exit(EXIT_FAILURE);
                         }
-                        printf("Avail fd found: %d\n", availIndexInreadFromCliFds);
+                        printf("A client connected.\n");
                         readFromCliFds[availIndexInreadFromCliFds].fd = connFd;
                         readFromCliFds[availIndexInreadFromCliFds].events = POLLIN | POLLPRI | POLLOUT;
                         tmpFlags = fcntl(connFd, F_GETFL, 0);
@@ -203,6 +203,36 @@ int main(void) {
                                     anm_construct_msg(p3, PARCELMLEN, authorServer, buffLogs);
                                     broadcast(readFromCliFds, CLIENTCAP, p3, PARCELMLEN);
                                     exit(EXIT_SUCCESS);
+                                }
+                                else if (hashValue == hash_sdbm("/online\n")) {
+                                    free(inputLine);
+                                    printf("Current online: %d\n", curOnline);
+                                }
+                                else if (hashValue == hash_sdbm("/clients\n")) {
+                                    free(inputLine);
+                                    printf("Current clients are:\n");
+                                    for (int g = 0; g < CLIENTCAP; g++) {
+                                        if (readFromCliFds[g].fd > 0) {
+
+                                            int __fd0 = readFromCliFds[g].fd;
+                                            char __cliIpStr[INET_ADDRSTRLEN];
+                                            uint16_t __cliPort;
+                                            struct sockaddr_in __cliAddr;
+                                            memset(&__cliAddr, 0, sizeof(__cliAddr));
+
+
+                                            b_socket *__pCurUser2 = NULL;
+                                            __pCurUser2 = find_b_socket(__fd0);
+                                            
+                                            if (__pCurUser2 != NULL) {
+                                                __cliAddr = __pCurUser2->addr;
+                                                inet_ntop(AF_INET, (struct sockaddr *) &__cliAddr.sin_addr.s_addr, __cliIpStr, INET_ADDRSTRLEN);
+                                                __cliPort = ntohs(__cliAddr.sin_port);
+
+                                                printf("%s:%u on fd = %d\n", __cliIpStr, __cliPort, __fd0);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             //write(connectFd, inputLine, nread);
@@ -252,8 +282,8 @@ int main(void) {
                     case 0:
                         char *parcel = malloc(PARCELMLEN);
 
-                        snprintf(cliAuthorStr, sizeof(cliAuthorStr), "%s:%u", cliIpStr, cliPort);
-                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliAuthorStr); 
+                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", authorServer); 
+                        printf("A client disconnected.\n");
 
                         //memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));
                         readFromCliFds[i].fd = 0;
