@@ -34,6 +34,9 @@ int main(void) {
     
     printf("IPv4 address: %s\n", inputServIp);
     printf("Port:         %u\n", inputServPort);
+
+    char authorServer[22];
+    snprintf(authorServer, 22, "%s:%u", inputServIp, inputServPort);
     
 
     int logFd;   
@@ -77,7 +80,7 @@ int main(void) {
 
 
     uint8_t otherCount = 0;
-    /* creating a listening socket */
+    /* creating a listening socket. i == 0 */
     if ((acceptFd = getlsocket(inputServIp, inputServPort)) == -1) {        
         write(0, "Error creating a listening socket, aborting.\n", 46);
         exit(EXIT_FAILURE);
@@ -92,7 +95,7 @@ int main(void) {
     otherCount++;
     int curOnline = 0;
 
-    /* fd for reading from getline() */
+    /* fd for reading from getline(). i == 1 */
     size_t getlineSize;
     ssize_t nread;
     char *inputLine;
@@ -131,7 +134,7 @@ int main(void) {
             for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
                 {
 
-                    if (otherFds[i].revents & POLLIN) {
+                    if (i == 0 && otherFds[i].revents & POLLIN) {
 
                         char cliIpStr[INET_ADDRSTRLEN];
                         uint16_t cliPort;
@@ -177,6 +180,33 @@ int main(void) {
                             exit(EXIT_FAILURE);
                         }
 
+                    }
+
+                    if (i == 1 && otherFds[i].revents & POLLIN) {
+                        inputLine = NULL;
+                        getlineSize = 0;
+
+                        if ((nread = getline(&inputLine, &getlineSize, stdin)) > 0) {
+                            
+                            if (inputLine == NULL) {
+                                /* ignore it */
+                                free(inputLine);
+                            }
+                            else if (inputLine[0] == '/') {
+                                unsigned long hashValue = hash_sdbm(inputLine);
+                                if (hashValue == hash_sdbm("/quit\n")) {
+                                    free(inputLine);
+                                    close(logFd);
+
+                                    char *p3 = malloc(PARCELMLEN);
+                                    strncpy(buffLogs, "Server is shutting down...\n", 28);
+                                    anm_construct_msg(p3, PARCELMLEN, authorServer, buffLogs);
+                                    broadcast(readFromCliFds, CLIENTCAP, p3, PARCELMLEN);
+                                    exit(EXIT_SUCCESS);
+                                }
+                            }
+                            //write(connectFd, inputLine, nread);
+                        }
                     }
 
                 }

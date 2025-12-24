@@ -158,4 +158,28 @@ int get_server_specs(char *ip, int ipSize, uint16_t *port, const char * const pa
 
 }
 
+/* int possible_command(char *__string, size_t stringSize) { /* returns -1 if empty string, 0 if no command detected, and 1 if a command detected and executed 
+
+    if (__string == NULL || stringSize == 0) {
+        return -1;
+    }
+    char *string = malloc(stringSize);
+    strncpy(string, __string, stringSize);
+    char *alloc0 = string;
+
+
+    if(string[0] != '/') {
+        return 0;
+    }
+
+    unsigned long hashValue = hash_sdbm(string);
+    if (hashValue == hash_sdbm("/quit\n")) {
+        exit(EXIT_SUCCESS);
+    }
+    if (hashValue == hash_sdbm("/stats\n")) {
+
+    }
+
+} */
+
 

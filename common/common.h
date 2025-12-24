@@ -29,7 +29,7 @@
 
 int writeft(int fd, char *msgbuf, char *author);
 
-unsigned long sdbm(char *str);
+unsigned long hash_sdbm(char *str);
 
 int getlsocket(char *ipAddr, uint16_t port);
 // char *truncate(char *str, unsigned int size);
