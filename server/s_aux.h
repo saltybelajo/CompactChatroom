@@ -30,4 +30,6 @@ void startup_text();
 
 int get_server_specs(char *ip, int ipSize, uint16_t *port, const char * const pathToJson);
 
+void random_base64_string(char *string, size_t stringSize);
+
 #endif

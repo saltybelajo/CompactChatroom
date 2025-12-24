@@ -14,6 +14,7 @@ int main(void) {
 
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
+    srand(time(NULL));
     startup_text();
     
 
@@ -85,15 +86,15 @@ int main(void) {
         write(0, "Error creating a listening socket, aborting.\n", 46);
         exit(EXIT_FAILURE);
     }     
-    otherFds[otherCount].fd = acceptFd;
-    otherFds[otherCount].events = POLLIN | POLLPRI;
     int tmpFlags = fcntl(acceptFd, F_GETFL, 0);
     if (fcntl(acceptFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
-        write(0, "fcntl failed\n", 14);
+        perror("fcntl");
         exit(EXIT_FAILURE);
     }
-    otherCount++;
+    otherFds[otherCount].fd = acceptFd;
+    otherFds[otherCount].events = POLLIN | POLLPRI;
     int curOnline = 0;
+    otherCount++;
 
     /* fd for reading from getline(). i == 1 */
     size_t getlineSize;
@@ -103,10 +104,28 @@ int main(void) {
     otherFds[otherCount].events = POLLIN | POLLPRI; //stdin is already non-blocking
     otherCount++;
 
+    /* fd for periodic server announcements. i == 2 */
+    int announceFd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (announceFd < 0) {
+        printf("main(): failed to create announceFd\n");
+        exit(EXIT_FAILURE);
+    }
+    tmpFlags = fcntl(announceFd, F_GETFL, 0);
+    if (fcntl(announceFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
+        perror("fcntl");
+        exit(EXIT_FAILURE);
+    }
+    otherFds[otherCount].fd = announceFd;
+    otherFds[otherCount].events = POLLIN;
+    otherCount++;
+
     
     
+
+    time_t t_last = time(NULL);
     for ( ; ; ) {
 
+        time_t t_cur = time(NULL);
                                                                                     /* set .revents everywhere to 0 */
         for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++) 
         {
@@ -118,7 +137,7 @@ int main(void) {
         }
 
                                                                                     /* start polling */
-        int otherFdsResult = poll(otherFds, otherCount, 20);
+        int otherFdsResult = poll(otherFds, otherCount-1, 20);
         int readFromCliFdsResult = poll(readFromCliFds, curOnline, 20); 
         
 
@@ -239,6 +258,12 @@ int main(void) {
                         }
                     }
 
+                    //if (i == 2 && otherFds[i].revents & POLLIN) {
+                    
+
+                    
+                    //}
+
                 }
         }  
 
@@ -316,6 +341,24 @@ int main(void) {
                 }
             } 
         }
+        if ((t_cur - t_last) > 120) {
+                    
+                    t_last = t_cur;
+                    size_t rstrSize = 5;
+                    char *rstr = malloc(rstrSize);
+                    memset(rstr, 0, rstrSize);
+                    random_base64_string(rstr, rstrSize);
+                    char buffMsg[MSGMLEN];
+                    memset(buffMsg, 0, MSGMLEN);
+                    
+                    char *p5 = malloc(PARCELMLEN);
+                    snprintf(buffMsg, MSGMLEN, "You are connected to %s. Random string: %s.\n", authorServer, rstr);
+                    anm_construct_msg(p5, PARCELMLEN, authorServer, buffMsg);
+                    broadcast(readFromCliFds, CLIENTCAP, p5, PARCELMLEN);
+
+                    free(p5);
+                    free(rstr);
+                }
 
     }
 

@@ -4,7 +4,14 @@
 
 b_socket *curUsers = NULL;
 
-
+static char base64_table[]  =  {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                                'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                                'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                                'w', 'x', 'y', 'z', '0', '1', '2', '3',
+                                '4', '5', '6', '7', '8', '9', '+', '/'};
 
 void add_b_socket(int fd, struct sockaddr_in addr) {
 
@@ -159,6 +166,17 @@ int get_server_specs(char *ip, int ipSize, uint16_t *port, const char * const pa
         free(am1);
         return 1;
 
+}
+
+
+void random_base64_string(char *string, size_t stringSize) {
+    unsigned long r; 
+    int max = 63;
+    int min = 0;
+    for(int i = 0; i < stringSize; i++) {
+        r = ((double) rand() / (RAND_MAX)) * (max-min+1) + min;
+        string[i] = base64_table[r];
+    }
 }
 
 /* int possible_command(char *__string, size_t stringSize) { /* returns -1 if empty string, 0 if no command detected, and 1 if a command detected and executed 
