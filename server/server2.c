@@ -72,23 +72,36 @@ int main(void) {
     struct pollfd readFromCliFds[CLIENTCAP];                                   /* poll for sockets reading client's msgs */
     memset(&readFromCliFds, 0, sizeof(readFromCliFds));
 
-    struct pollfd acceptSockFds[1];                                            /* poll for sockets listening to connections*/
-    memset(&acceptSockFds, 0, sizeof(acceptSockFds));
+    struct pollfd otherFds[2];                                            /* poll for other fds */
+    memset(&otherFds, 0, sizeof(otherFds));
 
 
+    uint8_t otherCount = 0;
+    /* creating a listening socket */
     if ((acceptFd = getlsocket(inputServIp, inputServPort)) == -1) {        
         write(0, "Error creating a listening socket, aborting.\n", 46);
         exit(EXIT_FAILURE);
     }     
-    acceptSockFds[0].fd = acceptFd;
-    acceptSockFds[0].events = POLLIN | POLLPRI;
+    otherFds[otherCount].fd = acceptFd;
+    otherFds[otherCount].events = POLLIN | POLLPRI;
     int tmpFlags = fcntl(acceptFd, F_GETFL, 0);
     if (fcntl(acceptFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
         write(0, "fcntl failed\n", 14);
         exit(EXIT_FAILURE);
     }
-    
+    otherCount++;
     int curOnline = 0;
+
+    /* fd for reading from getline() */
+    size_t getlineSize;
+    ssize_t nread;
+    char *inputLine;
+    otherFds[otherCount].fd = 0;
+    otherFds[otherCount].events = POLLIN | POLLPRI; //stdin is already non-blocking
+    otherCount++;
+
+    
+    
     for ( ; ; ) {
 
                                                                                     /* set .revents everywhere to 0 */
@@ -96,29 +109,29 @@ int main(void) {
         {
             readFromCliFds[i].revents = 0;
         }
-        for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
+        for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
         {
-            acceptSockFds[i].revents = 0;
+            otherFds[i].revents = 0;
         }
 
                                                                                     /* start polling */
-        int acceptSockFdsResult = poll(acceptSockFds, 1, 200);
-        int readFromCliFdsResult = poll(readFromCliFds, curOnline, 200); 
+        int otherFdsResult = poll(otherFds, otherCount, 20);
+        int readFromCliFdsResult = poll(readFromCliFds, curOnline, 20); 
         
 
 
-                                                                                    /* acceptSockFds */
-        if (acceptSockFdsResult < 0) {
-            write(0, "acceptSockFds poll error!\n", 27);
+                                                                                    /* otherFds */
+        if (otherFdsResult < 0) {
+            write(0, "otherFds poll error!\n", 22);
         }  
-        else if (acceptSockFdsResult == 0) {
+        else if (otherFdsResult == 0) {
             
         }          
-        else if (acceptSockFdsResult > 0) {
-            for (int i = 0; i < sizeof(acceptSockFds)/sizeof(acceptSockFds[0]); i++)
+        else if (otherFdsResult > 0) {
+            for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
                 {
 
-                    if (acceptSockFds[i].revents & POLLIN) {
+                    if (otherFds[i].revents & POLLIN) {
 
                         char cliIpStr[INET_ADDRSTRLEN];
                         uint16_t cliPort;

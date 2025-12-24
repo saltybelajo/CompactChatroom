@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
         readGetlineFds[0].revents = 0;
 
 
-        int readServFdsResult = poll(readServFds, 1, 200);                                 /* polls cooking up */
-        int readGetlineFdsResult = poll(readGetlineFds, 1, 200);
+        int readServFdsResult = poll(readServFds, 1, 20);                                 /* polls cooking up */
+        int readGetlineFdsResult = poll(readGetlineFds, 1, 20);
 
 
         if (readGetlineFdsResult < 0) {                                                     /* readGetlineFds poll */

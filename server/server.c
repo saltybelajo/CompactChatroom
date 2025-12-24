@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
             pid_t mypid = getpid();
 
             
-            snprintf(msgstr1, MSGMLEN, "Child process created. PID: %i. Handles the connection to: %s:%u.\n", mypid, str_cli_ip_child, child_resv_cli_port);
+            snprintf(msgstr1, MSGMLEN, "Child process created. PID: %i. Connection to: %s:%u\n", mypid, str_cli_ip_child, child_resv_cli_port);
             write(pipetopar_fd[1], msgstr1, MSGMLEN);
 
             
