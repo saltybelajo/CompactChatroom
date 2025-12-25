@@ -4,7 +4,7 @@
 
 
 
-int main(void) {
+int main(int argc, char **argv) {
 
     int acceptFd, connFd;
     struct sockaddr_in servAddr;
@@ -307,7 +307,8 @@ int main(void) {
                     case 0:
                         char *parcel = malloc(PARCELMLEN);
 
-                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", authorServer); 
+                        snprintf(cliAuthorStr, sizeof(cliAuthorStr), "%s:%u", cliIpStr, cliPort);
+                        snprintf(buffLogs, MSGMLEN, "%s has disconnected.\n", cliAuthorStr); 
                         printf("A client disconnected.\n");
 
                         //memset(&readFromCliFds[i], 0, sizeof(readFromCliFds[i]));

@@ -111,15 +111,22 @@ int main(int argc, char **argv) {
 
         }
         else if (readGetlineFdsResult > 0) {
-            if ((nread = getline(&inputLine, &size, stdin)) > 0) {
-                if (sdbm(inputLine) == sdbm("/quit\n")) {
-                    free(inputLine);
-                    close(connectFd);
-                    writeft(logFd, "getline exit\n", "client");
-                    exit(EXIT_SUCCESS);
-                }
-                write(connectFd, inputLine, nread);
+            switch(isClientTester) {
+                case 1:
+
+                default:
+                    if ((nread = getline(&inputLine, &size, stdin)) > 0) {
+                        if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
+                            free(inputLine);
+                            close(connectFd);
+                            writeft(logFd, "getline exit\n", "client");
+                            exit(EXIT_SUCCESS);
+                    }
+                    write(connectFd, inputLine, nread);
             }
+
+            }
+            
         }
                                                                                                 /* readServFds poll */
         if (readServFdsResult < 0) {
@@ -130,6 +137,7 @@ int main(int argc, char **argv) {
         }
         else if (readServFdsResult > 0) {
             if (readServFds[0].fd > 0 && readServFds[0].revents & POLLIN) {
+
                 memset(buffPrc, 0, PARCELMLEN);
                 int n = read(readServFds[0].fd, buffPrc, PARCELMLEN);
                 if (n > 0) {
@@ -146,6 +154,7 @@ int main(int argc, char **argv) {
                     free(recvPayload);
 
                 }
+
                 
             }
         }

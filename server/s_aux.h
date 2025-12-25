@@ -8,6 +8,8 @@
 
 #define TIMEOUT 3
 
+extern int isServerTester;
+
 typedef struct b_socket {
     int fd;
     struct sockaddr_in addr;

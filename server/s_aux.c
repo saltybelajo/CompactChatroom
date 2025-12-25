@@ -13,6 +13,8 @@ static char base64_table[]  =  {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                 '4', '5', '6', '7', '8', '9', '+', '/'};
 
+int isServerTester = 0;
+
 void add_b_socket(int fd, struct sockaddr_in addr) {
 
     b_socket *sock;
@@ -77,6 +79,7 @@ int broadcast(struct pollfd *fds, size_t fdsSize, char *parcel, size_t parcelSiz
         }
         
     }
+    printf("Sent %d messages.\n", sendCounter);
     return sendCounter;
 }
 

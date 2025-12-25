@@ -2,6 +2,8 @@
 
 #include "c_aux.h"
 
+int isClientTester = 0;
+
 int anm_deconstruct_msg(char *parcel, char *allocAuthor, char *allocPayload) {
     
     uint8_t parcelSize = parcel[0];
