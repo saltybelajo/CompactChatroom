@@ -2,7 +2,7 @@
 
 #include "c_aux.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv[]) {
 
     int listenFd, connectFd;
     struct sockaddr_in servAddr;
