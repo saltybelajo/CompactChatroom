@@ -21,6 +21,13 @@ int main(int argc, char **argv) {
         inputServIp = argv[1];
     }
 
+    if (argc == 3) {
+        if (hash_sdbm(argv[2]) == hash_sdbm("-test")) {
+            isClientTester = 1;
+            printf("Client is in tester mode.\n");
+        }
+    }
+
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
     startup_text();
@@ -91,8 +98,11 @@ int main(int argc, char **argv) {
     readGetlineFds[0].fd = 0;
     readGetlineFds[0].events = POLLIN | POLLPRI;
 
+    time_t t_last = time(NULL);
+    int interval = 120;
     for ( ; ; ) {
 
+        time_t t_cur = time(NULL);
         inputLine = NULL;
         size = 0;
         
@@ -111,21 +121,19 @@ int main(int argc, char **argv) {
 
         }
         else if (readGetlineFdsResult > 0) {
-            switch(isClientTester) {
-                case 1:
 
-                default:
-                    if ((nread = getline(&inputLine, &size, stdin)) > 0) {
-                        if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
-                            free(inputLine);
-                            close(connectFd);
-                            writeft(logFd, "getline exit\n", "client");
-                            exit(EXIT_SUCCESS);
-                    }
+            if ((nread = getline(&inputLine, &size, stdin)) > 0) {
+                if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
+                    free(inputLine);
+                    close(connectFd);
+                    writeft(logFd, "getline exit\n", "client");
+                    exit(EXIT_SUCCESS);
                     write(connectFd, inputLine, nread);
+                }
+                    
             }
 
-            }
+            
             
         }
                                                                                                 /* readServFds poll */
@@ -158,7 +166,19 @@ int main(int argc, char **argv) {
                 
             }
         }
+        if (isClientTester == 1) {
+            if ((t_cur - t_last) > interval) {
+                    
+                    t_last = t_cur;
 
+                    int max = 180;
+                    int min = 60;
+                    interval = ((double) rand() / (RAND_MAX)) * (max-min+1) + min;
+                    memset(buffMsg, 0, MSGMLEN);
+                    strncpy(buffMsg, "Client message. Yeah?\n", 23);
+                    write(connectFd, buffMsg, MSGMLEN);
+            }
+        }
         
     }
 
