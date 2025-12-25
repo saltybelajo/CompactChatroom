@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     }
 
     if (argc == 3) {
-        if (hash_sdbm(argv[2]) == hash_sdbm("-test\n")) {
+        if (hash_sdbm(argv[2]) == hash_sdbm("-test")) {
             isClientTester = 1;
             printf("Client is in tester mode.\n");
         }
