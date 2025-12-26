@@ -147,9 +147,9 @@ int main(int argc, char **argv) {
                 }
 
                 if (i == 1 && otherFds[0].revents & POLLIN) {
-                    inputLine = NULL;
-                    getlineSize = 0;
                     if (nread = getline(&inputLine, &getlineSize, stdin) > 0) {
+                        inputLine = NULL;
+                        getlineSize = 0;
                         if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
                             free(inputLine);
                             close(connectFd);
