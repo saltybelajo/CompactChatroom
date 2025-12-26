@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
     time_t t_last = time(NULL);
     for ( ; ; ) {
-
+        printf("cli array elems: %u\n", sizeof(readFromCliFds)/sizeof(readFromCliFds[0]));
         time_t t_cur = time(NULL);
                                                                                     /* set .revents everywhere to 0 */
         for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++) 
