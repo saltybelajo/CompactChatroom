@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
                 if (i == 1 && otherFds[0].revents & POLLIN) {
                     inputLine = NULL;
                     getlineSize = 0;
-                    nread = getline(&inputLine, &getlineSize, stdin);
+                    nread = getline(&inputLine, &getlineSize, 0);
 
                     switch (nread) 
                     {
