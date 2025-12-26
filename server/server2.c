@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
                         writeft(logFd, buffLogs, inputServIp);
                         snprintf(buffLogs, MSGMLEN, "%s:%u has joined.\n", cliIpStr, cliPort);
                         char *p2 = malloc(PARCELMLEN);
-                        anm_construct_msg(p2, PARCELMLEN, inputServIp, buffLogs);
+                        anm_construct_msg(p2, PARCELMLEN, authorServer, buffLogs);
                         broadcast(readFromCliFds, CLIENTCAP, p2, PARCELMLEN);
                         free(p2);
 
@@ -319,9 +319,9 @@ int main(int argc, char **argv) {
                         curOnline--;
                         close(cliFd);
 
-                        anm_construct_msg(parcel, PARCELMLEN, inputServIp, buffLogs);
+                        anm_construct_msg(parcel, PARCELMLEN, authorServer, buffLogs);
                         broadcast(readFromCliFds, CLIENTCAP, parcel, PARCELMLEN);
-                        writeft(logFd, buffLogs, inputServIp);
+                        writeft(logFd, buffLogs, authorServer);
                         free(parcel);
 
                         break;

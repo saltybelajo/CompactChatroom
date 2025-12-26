@@ -6,6 +6,11 @@ int main(int argc, char **argv) {
 
     int listenFd, connectFd;
     struct sockaddr_in servAddr;
+    char buffMsg[MSGMLEN];
+    memset(buffMsg, 0, MSGMLEN);
+    char buffPrc[PARCELMLEN];
+    memset(buffPrc, 0, sizeof(buffPrc));
+    int tmpFlags;
 
     char *inputServIp = "127.0.0.1";
     char *cliIpStr = resolve_my_ip_address();
@@ -23,7 +28,7 @@ int main(int argc, char **argv) {
 
     if (argc == 3) {
         if (hash_sdbm(argv[2]) == hash_sdbm("-test")) {
-            isClientTester = 1;
+            isTester = 1;
             printf("Client is in tester mode.\n");
         }
     }
@@ -51,34 +56,49 @@ int main(int argc, char **argv) {
 
 
                                                                                         /* polls */
-    struct pollfd readServFds[1];                                                  
-    memset(&readServFds, 0, sizeof(readServFds));
+    struct pollfd otherFds[2];                                                  
+    memset(&otherFds, 0, sizeof(otherFds));
 
     struct pollfd readGetlineFds[1];
     memset(&readGetlineFds, 0, sizeof(readGetlineFds));
 
-    connectFd = socket(AF_INET, SOCK_STREAM, 0);
+    
 
-    char *c0 = malloc(64);
-    memset(c0, 0, 64);
-    c0[0] = '?';
-    c0[1] = '\n';
-                                                                                        /* connecting to the server */
-    char buffMsg[MSGMLEN];
-    memset(buffMsg, 0, MSGMLEN);
-    char buffPrc[PARCELMLEN];
-    connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr)); 
-    int tmpFlags = fcntl(connectFd, F_GETFL, 0);
+
+    uint8_t otherCount = 0;
+    /* creating a connecting socket. i == 0 */
+    connectFd = socket(AF_INET, SOCK_STREAM, 0);
+    /*if (connectFd = socket(AF_INET, SOCK_STREAM, 0) < 0) {
+        printf("main(): error creating the connectFd socket.\n");
+        exit(EXIT_FAILURE);
+    }*/
+    int m1 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+    if (m1 < 0) {
+        printf("main(): error trying to connect with connectFd.\n");
+        exit(EXIT_FAILURE);
+    }
+    tmpFlags = fcntl(connectFd, F_GETFL, 0);
     if (fcntl(connectFd, F_SETFL, tmpFlags | O_NONBLOCK) == -1) {
         write(2, "fcntl failed\n", 14);
         exit(EXIT_FAILURE);
     }
-    readServFds[0].fd = connectFd;
-    readServFds[0].events = POLLIN | POLLPRI;
+    otherFds[0].fd = connectFd;
+    otherFds[0].events = POLLIN | POLLPRI;
+    int isConnected = 1;
+    otherCount++;
 
+
+    /* fd for reading from getline(). i == 1 */
+    size_t size;
+    ssize_t nread;
+    char *inputLine;
+    readGetlineFds[0].fd = 0;
+    readGetlineFds[0].events = POLLIN | POLLPRI;
+    otherCount++;
+
+    
     if (connectFd > 0) {
-        strncpy(c0, inputServIp, INET_ADDRSTRLEN);
-        printf("Connected to:     %s:%u\n", c0, inputServPort);
+        printf("Connected to:     %s:%u\n", inputServIp, inputServPort);
     }
     printf("Log path:         %s\n\n", "clilog1.txt");
     
@@ -92,11 +112,7 @@ int main(int argc, char **argv) {
     
 
                                                                                         /* the filestream n shi for Getline() */
-    size_t size;
-    ssize_t nread;
-    char *inputLine;
-    readGetlineFds[0].fd = 0;
-    readGetlineFds[0].events = POLLIN | POLLPRI;
+    
 
     time_t t_last = time(NULL);
     int interval = 120;
@@ -106,11 +122,11 @@ int main(int argc, char **argv) {
         inputLine = NULL;
         size = 0;
         
-        readServFds[0].revents = 0;                                                         /* set .revents everywhere to 0 */
+        otherFds[0].revents = 0;                                                         /* set .revents everywhere to 0 */
         readGetlineFds[0].revents = 0;
 
 
-        int readServFdsResult = poll(readServFds, 1, 20);                                 /* polls cooking up */
+        int otherFdsResult = poll(otherFds, 1, 20);                                 /* polls cooking up */
         int readGetlineFdsResult = poll(readGetlineFds, 1, 20);
 
 
@@ -128,26 +144,26 @@ int main(int argc, char **argv) {
                     close(connectFd);
                     writeft(logFd, "getline exit\n", "client");
                     exit(EXIT_SUCCESS);
-                    write(connectFd, inputLine, nread);
-                }
                     
+                }
+                write(connectFd, inputLine, nread);
             }
 
             
             
         }
-                                                                                                /* readServFds poll */
-        if (readServFdsResult < 0) {
+                                                                                                /* otherFds poll */
+        if (otherFdsResult < 0) {
 
         }
-        else if (readServFdsResult == 0) {
+        else if (otherFdsResult == 0) {
 
         }
-        else if (readServFdsResult > 0) {
-            if (readServFds[0].fd > 0 && readServFds[0].revents & POLLIN) {
+        else if (otherFdsResult > 0) {
+            if (otherFds[0].fd > 0 && otherFds[0].revents & POLLIN) {
 
                 memset(buffPrc, 0, PARCELMLEN);
-                int n = read(readServFds[0].fd, buffPrc, PARCELMLEN);
+                int n = read(otherFds[0].fd, buffPrc, PARCELMLEN);
                 if (n > 0) {
 
                     char *recvAuthor = malloc(AUTHORMLEN);
@@ -166,7 +182,7 @@ int main(int argc, char **argv) {
                 
             }
         }
-        if (isClientTester == 1) {
+        /*if (isTester == 1) {
             if ((t_cur - t_last) > interval) {
                     
                     t_last = t_cur;
@@ -178,8 +194,8 @@ int main(int argc, char **argv) {
                     strncpy(buffMsg, "Client message. Yeah?\n", 23);
                     write(connectFd, buffMsg, MSGMLEN);
             }
-        }
-        
+        } 
+        */
     }
 
 

@@ -25,7 +25,7 @@
 #define MSGMLEN 127
 #define PARCELMLEN 255
 #define AUTHORMLEN 31
-#define CLIENTCAP 16
+#define CLIENTCAP 127
 
 int writeft(int fd, char *msgbuf, char *author);
 
