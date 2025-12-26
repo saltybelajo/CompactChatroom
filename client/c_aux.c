@@ -3,6 +3,7 @@
 #include "c_aux.h"
 
 int isTester = 0;
+int isConnected = 0;
 
 int anm_deconstruct_msg(char *parcel, char *allocAuthor, char *allocPayload) {
     

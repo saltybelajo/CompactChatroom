@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     }
     otherFds[0].fd = connectFd;
     otherFds[0].events = POLLIN | POLLPRI;
-    int isConnected = 1;
+    isConnected = 1;
     otherCount++;
 
 
@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
                         break;
                     case 0: 
                         //disconnected
+                        printf("Oops, I think we have lost the connection.\n");
                     default:
                         if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
                             free(inputLine);
