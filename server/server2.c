@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
         }
 
                                                                                     /* start polling */
-        int otherFdsResult = poll(otherFds, otherCount-1, 20);
+        int otherFdsResult = poll(otherFds, otherCount, 20);
         int readFromCliFdsResult = poll(readFromCliFds, curOnline, 20); 
         
 

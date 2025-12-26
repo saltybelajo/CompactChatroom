@@ -52,17 +52,9 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    
-
-
                                                                                         /* polls */
     struct pollfd otherFds[2];                                                  
     memset(&otherFds, 0, sizeof(otherFds));
-
-    struct pollfd readGetlineFds[1];
-    memset(&readGetlineFds, 0, sizeof(readGetlineFds));
-
-    
 
 
     uint8_t otherCount = 0;
@@ -89,11 +81,11 @@ int main(int argc, char **argv) {
 
 
     /* fd for reading from getline(). i == 1 */
-    size_t size;
+    size_t getlineSize;
     ssize_t nread;
     char *inputLine;
-    readGetlineFds[0].fd = 0;
-    readGetlineFds[0].events = POLLIN | POLLPRI;
+    otherFds[1].fd = 0;
+    otherFds[1].events = POLLIN | POLLPRI;
     otherCount++;
 
     
@@ -102,84 +94,82 @@ int main(int argc, char **argv) {
     }
     printf("Log path:         %s\n\n", "clilog1.txt");
     
-    
-    //snprintf(buffMsg, sizeof(buffMsg), "Hello! I am a client.\n");
+
     char *hello = "Hello. I am a client.\n";
     int n2 = sizeof(buffMsg);
     write(connectFd, hello, 23);
-    //printf("Connected to: %s:%u\n", inputServIp, inputServPort);
-    //printf("Type /quit to shut down.\n");
-    
-
-                                                                                        /* the filestream n shi for Getline() */
     
 
     time_t t_last = time(NULL);
     int interval = 120;
     for ( ; ; ) {
-
         time_t t_cur = time(NULL);
-        inputLine = NULL;
-        size = 0;
         
-        otherFds[0].revents = 0;                                                         /* set .revents everywhere to 0 */
-        readGetlineFds[0].revents = 0;
-
-
-        int otherFdsResult = poll(otherFds, 1, 20);                                 /* polls cooking up */
-        int readGetlineFdsResult = poll(readGetlineFds, 1, 20);
-
-
-        if (readGetlineFdsResult < 0) {                                                     /* readGetlineFds poll */
-            write(2, "readGetlineFds poll error!\n", 28);
+        
+        for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
+        {
+            otherFds[i].revents = 0;
         }
-        else if (readGetlineFdsResult == 0) {
 
-        }
-        else if (readGetlineFdsResult > 0) {
 
-            if ((nread = getline(&inputLine, &size, stdin)) > 0) {
-                if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
-                    free(inputLine);
-                    close(connectFd);
-                    writeft(logFd, "getline exit\n", "client");
-                    exit(EXIT_SUCCESS);
-                    
-                }
-                write(connectFd, inputLine, nread);
-            }
-
-            
-            
-        }
+        int otherFdsResult = poll(otherFds, otherCount, 20);                                 /* polls cooking up */
                                                                                                 /* otherFds poll */
         if (otherFdsResult < 0) {
 
         }
         else if (otherFdsResult == 0) {
-
+            // nothing has happened
         }
         else if (otherFdsResult > 0) {
-            if (otherFds[0].fd > 0 && otherFds[0].revents & POLLIN) {
 
-                memset(buffPrc, 0, PARCELMLEN);
-                int n = read(otherFds[0].fd, buffPrc, PARCELMLEN);
-                if (n > 0) {
+            for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++) {
 
-                    char *recvAuthor = malloc(AUTHORMLEN);
-                    memset(recvAuthor, 0, AUTHORMLEN);
-                    char *recvPayload = malloc(MSGMLEN);
-                    memset(recvPayload, 0, MSGMLEN);
+                if (i == 0 && otherFds[0].revents & POLLIN) {
 
-                    anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
-                    writeft(logFd, recvPayload, recvAuthor);
-                    write_to_user(1, recvPayload, recvAuthor);
-                    free(recvAuthor);
-                    free(recvPayload);
+                    memset(buffPrc, 0, PARCELMLEN);
+                    int n = read(otherFds[0].fd, buffPrc, PARCELMLEN);
+                    if (n > 0) {
 
+                        char *recvAuthor = malloc(AUTHORMLEN);
+                        memset(recvAuthor, 0, AUTHORMLEN);
+                        char *recvPayload = malloc(MSGMLEN);
+                        memset(recvPayload, 0, MSGMLEN);
+
+                        anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
+                        writeft(logFd, recvPayload, recvAuthor);
+                        write_to_user(1, recvPayload, recvAuthor);
+                        free(recvAuthor);
+                        free(recvPayload);
+
+                    }
+
+                    
                 }
 
-                
+                if (i == 1 && otherFds[0].revents & POLLIN) {
+                    inputLine = NULL;
+                    getlineSize = 0;
+                    nread = getline(&inputLine, &getlineSize, stdin);
+
+                    switch (nread) 
+                    {
+                    case -1:
+                        break;
+                    case 0: 
+                        //disconnected
+                    default:
+                        if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
+                            free(inputLine);
+                            close(connectFd);
+                            writeft(logFd, "getline exit\n", "client");
+                            exit(EXIT_SUCCESS);
+                    
+                        }
+                        else {
+                            write(connectFd, inputLine, nread);
+                        }   
+                    }
+                }
             }
         }
         /*if (isTester == 1) {
