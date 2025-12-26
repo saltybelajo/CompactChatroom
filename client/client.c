@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 
                         anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
                         writeft(logFd, recvPayload, recvAuthor);
-                        write_to_user(stdout, recvPayload, recvAuthor);
+                        write_to_user(1, recvPayload, recvAuthor);
                         free(recvAuthor);
                         free(recvPayload);
 
