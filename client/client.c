@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
                 if (i == 0 && otherFds[0].revents & POLLIN) {
 
                     memset(buffPrc, 0, PARCELMLEN);
-                    int n = read(otherFds[0].fd, buffPrc, PARCELMLEN);
+                    int n = read(otherFds[i].fd, buffPrc, PARCELMLEN);
                     if (n > 0) {
 
                         char *recvAuthor = malloc(AUTHORMLEN);
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 
                         anm_deconstruct_msg(buffPrc, recvAuthor, recvPayload);
                         writeft(logFd, recvPayload, recvAuthor);
-                        write_to_user(1, recvPayload, recvAuthor);
+                        write_to_user(stdout, recvPayload, recvAuthor);
                         free(recvAuthor);
                         free(recvPayload);
 

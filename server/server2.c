@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     struct pollfd readFromCliFds[CLIENTCAP];                                   /* poll for sockets reading client's msgs */
     memset(&readFromCliFds, 0, sizeof(readFromCliFds));
 
-    struct pollfd otherFds[2];                                            /* poll for other fds */
+    struct pollfd otherFds[10];                                            /* poll for other fds */
     memset(&otherFds, 0, sizeof(otherFds));
 
 
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
                 }
             } 
         }
-        if ((t_cur - t_last) > 120 && curOnline > 0) {
+        if ((t_cur - t_last) > 120) {
                     
                     t_last = t_cur;
                     size_t rstrSize = 5;
