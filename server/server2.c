@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
                             exit(EXIT_FAILURE);
                         }
 
-                    }
+                    }   
 
                     if (i == 1 && otherFds[i].revents & POLLIN) {
                         inputLine = NULL;
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
                 }
             } 
         }
-        if ((t_cur - t_last) > 120) {
+        if ((t_cur - t_last) > 120 && curOnline > 0) {
                     
                     t_last = t_cur;
                     size_t rstrSize = 5;
