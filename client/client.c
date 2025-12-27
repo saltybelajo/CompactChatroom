@@ -125,8 +125,16 @@ int main(int argc, char **argv) {
                 if (i == 0 && otherFds[0].revents & POLLIN) {
 
                     memset(buffPrc, 0, PARCELMLEN);
-                    int n = read(otherFds[i].fd, buffPrc, PARCELMLEN);
-                    if (n > 0) {
+                    int n0 = read(otherFds[i].fd, buffPrc, PARCELMLEN);
+                    if (n0 == -1) {
+                        // nothing
+                    }
+                    else if (n0 == 0) {
+                        close(connectFd);
+                        isConnected = 0;
+                        printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
+                    }
+                    else if (n0 > 0) {
 
                         char *recvAuthor = malloc(AUTHORMLEN);
                         memset(recvAuthor, 0, AUTHORMLEN);
@@ -150,18 +158,27 @@ int main(int argc, char **argv) {
                     int r0 = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
                     
                     if (r0 > 0) {
-                        char *buffRcv = malloc(r0);
-                        strncpy(buffRcv, buffMsg, r0);
-                        if (hash_sdbm(buffRcv) == hash_sdbm("/quit\n")) { // check for commands
-                            free(buffRcv);
+                        char *buff_r0 = malloc(r0);
+                        strncpy(buff_r0, buffMsg, r0);
+                        if (hash_sdbm(buff_r0) == hash_sdbm("/quit\n")) { // check for commands
+                            free(buff_r0);
                             close(connectFd);
                             writeft(logFd, "getline exit\n", "client");
                             exit(EXIT_SUCCESS);
-                    
+                        }
+                        if (hash_sdbm(buff_r0) == hash_sdbm("/reconnect\n") && isConnected != 1) {
+                            int __f1 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+                            if (__f1 < 0) {
+                                printf("Failed to reconnect.\n");
+                            }
+                            else if (__f1 == 0) {
+                                isConnected = 1;
+                                printf("Connected to:     %s:%u\n", inputServIp, inputServPort);
+                            }
                         }
                         else {
-                            write(connectFd, buffRcv, r0);
-                            free(buffRcv);
+                            write(connectFd, buff_r0, r0);
+                            free(buff_r0);
                         }   
                     }
                 }
