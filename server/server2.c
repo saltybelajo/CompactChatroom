@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
     size_t parcelSize;
 
     char buffLogs[MSGMLEN];
+    char buffMsg[MSGMLEN];
 
     fflush(stdout);
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -97,9 +98,6 @@ int main(int argc, char **argv) {
     otherCount++;
 
     /* fd for reading from getline(). i == 1 */
-    size_t getlineSize;
-    ssize_t nread;
-    char *inputLine;
     otherFds[otherCount].fd = 0;
     otherFds[otherCount].events = POLLIN | POLLPRI; //stdin is already non-blocking
     otherCount++;
@@ -124,7 +122,6 @@ int main(int argc, char **argv) {
 
     time_t t_last = time(NULL);
     for ( ; ; ) {
-        printf("cli array elems: %u\n", sizeof(readFromCliFds)/sizeof(readFromCliFds[0]));
         time_t t_cur = time(NULL);
                                                                                     /* set .revents everywhere to 0 */
         for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++) 
@@ -202,19 +199,20 @@ int main(int argc, char **argv) {
                     }   
 
                     if (i == 1 && otherFds[i].revents & POLLIN) {
-                        inputLine = NULL;
-                        getlineSize = 0;
+                        memset(buffMsg, 0, MSGMLEN);
+                        int r0 = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
 
-                        if ((nread = getline(&inputLine, &getlineSize, stdin)) > 0) {
-                            
-                            if (inputLine == NULL) {
+                        if (r0 > 0) {
+                            char *buffR0 = malloc(r0);
+                            strncpy(buffR0, buffMsg, r0);
+                            if (buffR0 == NULL) {
                                 /* ignore it */
-                                free(inputLine);
+                                free(buffR0);
                             }
-                            else if (inputLine[0] == '/') {
-                                unsigned long hashValue = hash_sdbm(inputLine);
+                            else if (buffR0[0] == '/') {
+                                unsigned long hashValue = hash_sdbm(buffR0);
                                 if (hashValue == hash_sdbm("/quit\n")) {
-                                    free(inputLine);
+                                    free(buffR0);
                                     close(logFd);
 
                                     char *p3 = malloc(PARCELMLEN);
@@ -224,11 +222,11 @@ int main(int argc, char **argv) {
                                     exit(EXIT_SUCCESS);
                                 }
                                 else if (hashValue == hash_sdbm("/online\n")) {
-                                    free(inputLine);
+                                    free(buffR0);
                                     printf("Current online: %d\n", curOnline);
                                 }
                                 else if (hashValue == hash_sdbm("/clients\n")) {
-                                    free(inputLine);
+                                    free(buffR0);
                                     printf("Current clients are:\n");
                                     for (int g = 0; g < CLIENTCAP; g++) {
                                         if (readFromCliFds[g].fd > 0) {
@@ -254,7 +252,7 @@ int main(int argc, char **argv) {
                                     }
                                 }
                             }
-                            //write(connectFd, inputLine, nread);
+                            //write(connectFd, buffR0, nread);
                         }
                     }
 
@@ -282,7 +280,7 @@ int main(int argc, char **argv) {
                 if (readFromCliFds[i].fd > 0) //  && readFromCliFds[i].revents & POLLIN
                 {
                     
-                    char buffMsg[MSGMLEN];
+
                     memset(buffMsg, 0, MSGMLEN);
                     char cliIpStr[INET_ADDRSTRLEN];
                     char cliAuthorStr[AUTHORMLEN];
@@ -342,7 +340,7 @@ int main(int argc, char **argv) {
                 }
             } 
         }
-        if ((t_cur - t_last) > 120) {
+        if ((t_cur - t_last) > 10) {
                     
                     t_last = t_cur;
                     size_t rstrSize = 5;

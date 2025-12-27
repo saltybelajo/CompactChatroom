@@ -147,6 +147,31 @@ char *resolve_my_ip_address() {
 
 }
 
+
+int readnl(int __fd, char *__buff, ssize_t __buffMaxSize) {                              /* memset buffer to 0 beforehand! */
+
+    char *buff = malloc(__buffMaxSize);
+    memset(buff, 0, __buffMaxSize);
+    int fd = __fd;
+    if (fd < 0) {
+        fprintf(stderr, "readnl(): failed opening the file from given fd.\n");
+        return -1;
+    }
+    char a;
+    int filledBytes = 0;
+    while(a != '\n' && filledBytes < __buffMaxSize) {
+        int r0 = read(fd, &a, 1);
+        if (r0 < 0) {
+            break;
+        }
+        buff[filledBytes] = a;
+        filledBytes++;
+    }
+    strncpy(__buff, buff, filledBytes);
+    return(filledBytes);
+
+}
+
 /* char *truncate(char *str, unsigned int size) {
 
     if (strnlen(str, size) > size - 1) {

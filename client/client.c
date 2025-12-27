@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
     }
 
     fflush(stdout);
+    fflush(stdin);
     setvbuf(stdout, NULL, _IONBF, 0);
     startup_text();
     printf("Client IP addr:   %s\n", cliIpStr);
@@ -81,9 +82,6 @@ int main(int argc, char **argv) {
 
 
     /* fd for reading from getline(). i == 1 */
-    size_t getlineSize;
-    ssize_t nread;
-    char *inputLine;
     otherFds[1].fd = 0;
     otherFds[1].events = POLLIN | POLLPRI;
     otherCount++;
@@ -146,19 +144,24 @@ int main(int argc, char **argv) {
                     
                 }
 
-                if (i == 1 && otherFds[0].revents & POLLIN) {
-                    inputLine = NULL;
-                    getlineSize = 0;
-                    if (nread = getline(&inputLine, &getlineSize, stdin) > 0) {
-                        if (hash_sdbm(inputLine) == hash_sdbm("/quit\n")) {
-                            free(inputLine);
+                if (i == 1 && otherFds[i].revents & POLLIN) {
+
+                    memset(buffMsg, 0, MSGMLEN);
+                    int r0 = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
+                    
+                    if (r0 > 0) {
+                        char *buffRcv = malloc(r0);
+                        strncpy(buffRcv, buffMsg, r0);
+                        if (hash_sdbm(buffRcv) == hash_sdbm("/quit\n")) { // check for commands
+                            free(buffRcv);
                             close(connectFd);
                             writeft(logFd, "getline exit\n", "client");
                             exit(EXIT_SUCCESS);
                     
                         }
                         else {
-                            write(connectFd, inputLine, nread);
+                            write(connectFd, buffRcv, r0);
+                            free(buffRcv);
                         }   
                     }
                 }

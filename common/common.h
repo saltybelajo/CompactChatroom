@@ -45,4 +45,6 @@ int write_to_user(int fd, char *msgbuf, char *author);
 
 char *resolve_my_ip_address();
 
+int readnl(int __fd, char *__buff, ssize_t __buffMaxSize);
+
 #endif
