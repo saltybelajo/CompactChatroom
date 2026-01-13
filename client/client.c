@@ -168,9 +168,9 @@ int main(int argc, char **argv) {
                         char *buff_r0 = malloc(r0);
                         strncpy(buff_r0, buffMsg, r0);
 
-                        snprintf(buffLogs, MSGMLEN-1, "Read a string of %d bytes from the terminal.\n", r0);
+                        snprintf(buffLogs, MSGMLEN-1, "Have read %d bytes from the terminal.\n", r0);
                         writeft(logFd, buffLogs, cliIpStr);
-                        
+
                         if (hash_sdbm(buff_r0) == hash_sdbm("/quit\n")) { // check for commands
                             free(buff_r0);
                             close(connectFd);
@@ -191,6 +191,10 @@ int main(int argc, char **argv) {
                         }
                         else {
                             write(connectFd, buff_r0, r0);
+
+                            snprintf(buffLogs, MSGMLEN-1, "Wrote %d bytes to the server via connectFd=%d.\n", r0, connectFd);
+                            writeft(logFd, buffLogs, cliIpStr);
+
                             free(buff_r0);
                         }   
                     }
