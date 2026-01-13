@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 
                     memset(buffPrc, 0, PARCELMLEN);
                     int n0 = read(otherFds[i].fd, buffPrc, PARCELMLEN);
-                    
+
                     snprintf(buffLogs, MSGMLEN-1, "Read a message of %d bytes from the server.\n", n0);
                     writeft(logFd, buffLogs, cliIpStr);
 
@@ -167,6 +167,10 @@ int main(int argc, char **argv) {
                     if (r0 > 0) {
                         char *buff_r0 = malloc(r0);
                         strncpy(buff_r0, buffMsg, r0);
+
+                        snprintf(buffLogs, MSGMLEN-1, "Read a string of %d bytes from the terminal.\n", r0);
+                        writeft(logFd, buffLogs, cliIpStr);
+                        
                         if (hash_sdbm(buff_r0) == hash_sdbm("/quit\n")) { // check for commands
                             free(buff_r0);
                             close(connectFd);
