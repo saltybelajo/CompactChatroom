@@ -61,6 +61,8 @@ int main(int argc, char **argv) {
     uint8_t otherCount = 0;
     /* creating a connecting socket. i == 0 */
     connectFd = socket(AF_INET, SOCK_STREAM, 0);
+    snprintf(buffLogs, MSGMLEN - 1, "Created socket for connection, connectFd=%d\n", connectFd);
+    writeft(logFd, buffLogs, cliIpStr);
     /*if (connectFd = socket(AF_INET, SOCK_STREAM, 0) < 0) {
         printf("main(): error creating the connectFd socket.\n");
         exit(EXIT_FAILURE);
@@ -126,6 +128,10 @@ int main(int argc, char **argv) {
 
                     memset(buffPrc, 0, PARCELMLEN);
                     int n0 = read(otherFds[i].fd, buffPrc, PARCELMLEN);
+                    
+                    snprintf(buffLogs, MSGMLEN-1, "Read a message of %d bytes from the server.\n", n0);
+                    writeft(logFd, buffLogs, cliIpStr);
+
                     if (n0 == -1) {
                         // nothing
                     }
@@ -147,6 +153,7 @@ int main(int argc, char **argv) {
                         free(recvAuthor);
                         free(recvPayload);
 
+                        
                     }
 
                     
@@ -167,7 +174,9 @@ int main(int argc, char **argv) {
                             exit(EXIT_SUCCESS);
                         }
                         if (hash_sdbm(buff_r0) == hash_sdbm("/reconnect\n") && isConnected != 1) {
-                            int __f1 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+                            int reconnectFd;
+                            reconnectFd = socket(AF_INET, SOCK_STREAM, 0);
+                            int __f1 = connect(reconnectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
                             if (__f1 < 0) {
                                 printf("Failed to reconnect.\n");
                             }

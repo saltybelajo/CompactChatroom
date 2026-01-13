@@ -22,10 +22,10 @@
 #include <../common/cJSON/cJSON.h>
 #include <sys/mman.h>
 
-#define MSGMLEN 127
-#define PARCELMLEN 255
-#define AUTHORMLEN 31
-#define CLIENTCAP 127
+#define MSGMLEN 128
+#define PARCELMLEN 256
+#define AUTHORMLEN 32
+#define CLIENTCAP 128
 
 int writeft(int fd, char *msgbuf, char *author);
 

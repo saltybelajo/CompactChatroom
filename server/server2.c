@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
                 }
             } 
         }
-        if ((t_cur - t_last) > 10) {
+        if ((t_cur - t_last) > 180) {
                     
                     t_last = t_cur;
                     size_t rstrSize = 5;
