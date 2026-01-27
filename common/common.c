@@ -36,7 +36,7 @@ int writeft(int fd, char *msgbuf, char *author)
 
 }
 
-unsigned long hash_sdbm(char *str) {
+unsigned long hash_sdbm(const char *str) {
 
         unsigned long hash = 0;
         int c;

@@ -11,27 +11,40 @@ int main(int argc, char **argv) {
     char buffPrc[PARCELMLEN];
     memset(buffPrc, 0, sizeof(buffPrc));
     int tmpFlags;
+    char buffLogs[MSGMLEN];
+
+
+    const int clientCmdPoolSize = 2;
+    const char *clientCmdPool[2] = {"/quit\n", "/reconnect\n"};
+
+    int logFd;
+    logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
+    assert(logFd > 0);
+    snprintf(buffLogs, MSGMLEN, "Logs accessed. Path: ./clilog1.txt\n");            /* logs */
+    writeft(logFd, buffLogs, "SERVER");
 
     char *inputServIp = "127.0.0.1";
     char *cliIpStr = resolve_my_ip_address();
     uint16_t inputServPort = 9877;
+    snprintf(buffLogs, MSGMLEN, "Starting. argc = %d.\n", argc);                /* logs */
+    writeft(logFd, buffLogs, cliIpStr);
 
-    char buffLogs[MSGMLEN];
-
-    if(argc < 2) {
-        //printf("Usage: %s <IPaddress>.\nServer IP address set to localhost by default.\n", argv[0]);
+    if(argc == 2) {
+        inputServIp = argv[1];
+        //inputServPort = *argv[2];
     }
     else
     {
-        inputServIp = argv[1];
+        printf("Usage: %s <ip_address> <port>\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    if (argc == 3) {
+    /* if (argc == 4) {
         if (hash_sdbm(argv[2]) == hash_sdbm("-test")) {
             isTester = 1;
             printf("Client is in tester mode.\n");
         }
-    }
+    } */
 
     fflush(stdout);
     fflush(stdin);
@@ -39,10 +52,7 @@ int main(int argc, char **argv) {
     startup_text();
     printf("Client IP addr:   %s\n", cliIpStr);
 
-    int logFd;
-    logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
-    snprintf(buffLogs, MSGMLEN, "Logs accessed. Path: ./clilog1.txt\n");
-    writeft(logFd, buffLogs, cliIpStr);
+    
 
     memset(&servAddr, '\0', sizeof(servAddr));                                                  /* getting servers actual IP address*/
     servAddr.sin_family = AF_INET;
@@ -67,8 +77,8 @@ int main(int argc, char **argv) {
         printf("main(): error creating the connectFd socket.\n");
         exit(EXIT_FAILURE);
     }*/
-    int m1 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
-    if (m1 < 0) {
+    int connectAssert = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+    if (connectAssert < 0) {
         printf("main(): error trying to connect with connectFd.\n");
         exit(EXIT_FAILURE);
     }
@@ -79,7 +89,7 @@ int main(int argc, char **argv) {
     }
     otherFds[0].fd = connectFd;
     otherFds[0].events = POLLIN | POLLPRI;
-    isConnected = 1;
+    bool isConnected = true;
     otherCount++;
 
 
@@ -102,8 +112,13 @@ int main(int argc, char **argv) {
 
     time_t t_last = time(NULL);
     int interval = 120;
+    int commandHandlerReturn;
+    unsigned long cmdHash = 0;
+
     for ( ; ; ) {
+
         time_t t_cur = time(NULL);
+        commandHandlerReturn = -1;
         
         
         for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
@@ -115,10 +130,11 @@ int main(int argc, char **argv) {
         int otherFdsResult = poll(otherFds, otherCount, 20);                                 /* polls cooking up */
                                                                                                 /* otherFds poll */
         if (otherFdsResult < 0) {
-
+            ;
         }
         else if (otherFdsResult == 0) {
-            // nothing has happened
+            snprintf(buffLogs, MSGMLEN - 1, "otherFdsResult = 0.\n");                /* logs */
+            writeft(logFd, buffLogs, cliIpStr);
         }
         else if (otherFdsResult > 0) {
 
@@ -129,13 +145,15 @@ int main(int argc, char **argv) {
                     memset(buffPrc, 0, PARCELMLEN);
                     int n0 = read(otherFds[i].fd, buffPrc, PARCELMLEN);
 
-                    snprintf(buffLogs, MSGMLEN-1, "Read a message of %d bytes from the server.\n", n0);
+                    snprintf(buffLogs, MSGMLEN - 1, "Have read a message of %d bytes from the server.\n", n0);         /* logs */
                     writeft(logFd, buffLogs, cliIpStr);
 
                     if (n0 == -1) {
-                        // nothing
+                        ;
                     }
                     else if (n0 == 0) {
+                        snprintf(buffLogs, MSGMLEN - 1, "Closing the connected socket, connectFd = %d.\n", connectFd);         /* logs */
+                        writeft(logFd, buffLogs, cliIpStr);
                         close(connectFd);
                         isConnected = 0;
                         printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
@@ -162,44 +180,65 @@ int main(int argc, char **argv) {
                 if (i == 1 && otherFds[i].revents & POLLIN) {
 
                     memset(buffMsg, 0, MSGMLEN);
-                    int r0 = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
+                    int readnlBytes = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
                     
-                    if (r0 > 0) {
-                        char *buff_r0 = malloc(r0);
-                        strncpy(buff_r0, buffMsg, r0);
+                    if (readnlBytes > 0) {
+                        char *buffReadnl = malloc(readnlBytes);
+                        strncpy(buffReadnl, buffMsg, readnlBytes);
 
-                        snprintf(buffLogs, MSGMLEN-1, "Have read %d bytes from the terminal.\n", r0);
+                        snprintf(buffLogs, MSGMLEN-1, "Have read %d bytes from the terminal.\n", readnlBytes);          /* logs */
                         writeft(logFd, buffLogs, cliIpStr);
 
-                        if (hash_sdbm(buff_r0) == hash_sdbm("/quit\n")) { // check for commands
-                            free(buff_r0);
-                            close(connectFd);
-                            writeft(logFd, "getline exit\n", "client");
-                            exit(EXIT_SUCCESS);
-                        }
-                        if (hash_sdbm(buff_r0) == hash_sdbm("/reconnect\n") && isConnected != 1) {
-                            int reconnectFd;
-                            reconnectFd = socket(AF_INET, SOCK_STREAM, 0);
-                            int __f1 = connect(reconnectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
-                            if (__f1 < 0) {
-                                printf("Failed to reconnect.\n");
-                            }
-                            else if (__f1 == 0) {
-                                isConnected = 1;
-                                printf("Connected to:     %s:%u\n", inputServIp, inputServPort);
+                        
+                        for(int r = 0; r < clientCmdPoolSize; r++) { // check if any commands have been input in the terminal
+                            if (hash_sdbm(buffReadnl) == hash_sdbm(clientCmdPool[r])) {
+                                commandHandlerReturn = r;
+                                break;
                             }
                         }
-                        else {
-                            write(connectFd, buff_r0, r0);
+                        if (commandHandlerReturn == 0) {
+                            write(connectFd, buffReadnl, readnlBytes);
 
-                            snprintf(buffLogs, MSGMLEN-1, "Wrote %d bytes to the server via connectFd=%d.\n", r0, connectFd);
+                            snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd=%d.\n", readnlBytes, connectFd);          /* logs */
                             writeft(logFd, buffLogs, cliIpStr);
 
-                            free(buff_r0);
+                            free(buffReadnl);
                         }   
                     }
                 }
             }
+        }
+
+        /* the Command Handler */
+        switch (commandHandlerReturn)
+        {
+            case 0:                         /* /quit */
+
+                close(connectFd);
+                writeft(logFd, "getline exit\n", cliIpStr);
+                exit(EXIT_SUCCESS);
+
+            case 1:                         /* /reconnect */
+                
+                if (isConnected == true) {
+                    printf("Already connected!\n");
+                    snprintf(buffLogs, MSGMLEN - 1, "Handler received a /reconnect command, but the client seems to be connected.\n");          /* logs */
+                    writeft(logFd, buffLogs, cliIpStr);
+                    break;
+                }
+                int connectAssert2 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+                if (connectAssert2 < 0) {
+                    printf("Tried to reconnect but failed.\n");
+                    snprintf(buffLogs, MSGMLEN - 1, "Failed to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
+                    writeft(logFd, buffLogs, cliIpStr);
+                }
+                else {
+                    printf("Reconnected!");
+                    isConnected = true;
+                }
+
+            default:
+                continue;
         }
         /*if (isTester == 1) {
             if ((t_cur - t_last) > interval) {

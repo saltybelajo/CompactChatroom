@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <../common/cJSON/cJSON.h>
 #include <sys/mman.h>
+#include <assert.h>
+#include <stdbool.h>
 
 #define MSGMLEN 128
 #define PARCELMLEN 256
@@ -29,7 +31,7 @@
 
 int writeft(int fd, char *msgbuf, char *author);
 
-unsigned long hash_sdbm(char *str);
+unsigned long hash_sdbm(const char *str);
 
 int getlsocket(char *ipAddr, uint16_t port);
 // char *truncate(char *str, unsigned int size);
