@@ -230,6 +230,12 @@ int main(int argc, char **argv) {
                     writeft(logFd, buffLogs, cliIpStr);
                     break;
                 }
+                connectFd = socket(AF_INET, SOCK_STREAM, 0);
+                if (connectFd == -1) {
+                    printf("Failed to create a socket to reconnect.\n");
+                    snprintf(buffLogs, MSGMLEN - 1, "Failed to create a socket to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
+                    writeft(logFd, buffLogs, cliIpStr);
+                }
                 int connectAssert2 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
                 if (connectAssert2 < 0) {
                     printf("Tried to reconnect but failed.\n");
