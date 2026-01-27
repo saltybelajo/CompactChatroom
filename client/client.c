@@ -14,8 +14,8 @@ int main(int argc, char **argv) {
     char buffLogs[MSGMLEN];
 
 
-    const int clientCmdPoolSize = 2;
-    const char *clientCmdPool[2] = {"/quit\n", "/reconnect\n"};
+    const int clientCmdPoolSize = 3;
+    const char *clientCmdPool[3] = {"/quit\n", "/reconnect\n", "/disconnect\n"};
 
     int logFd;
     logFd = open("clilog1.txt", O_WRONLY | O_APPEND | O_CREAT | O_TRUNC, 0644);
@@ -110,14 +110,13 @@ int main(int argc, char **argv) {
     write(connectFd, hello, 23);
     
 
-    time_t t_last = time(NULL);
-    int interval = 120;
+    time_t timerLastDisconnectMsg = time(NULL);
+    int intervalDisconnectMsg = 30;
     int commandHandlerReturn;
-    unsigned long cmdHash = 0;
 
     for ( ; ; ) {
 
-        time_t t_cur = time(NULL);
+        time_t timerCurrent = time(NULL);
         commandHandlerReturn = -1;
         
         
@@ -152,11 +151,11 @@ int main(int argc, char **argv) {
                         ;
                     }
                     else if (n0 == 0) {
-                        snprintf(buffLogs, MSGMLEN - 1, "Closing the connected socket, connectFd = %d.\n", connectFd);         /* logs */
+                        snprintf(buffLogs, MSGMLEN - 1, "0 byte message received, closing the connected socket, connectFd = %d.\n", connectFd);         /* logs */
                         writeft(logFd, buffLogs, cliIpStr);
                         close(connectFd);
-                        isConnected = 0;
-                        printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
+                        isConnected = false;
+                        
                     }
                     else if (n0 > 0) {
 
@@ -210,6 +209,10 @@ int main(int argc, char **argv) {
         }
 
         /* the Command Handler */
+
+        if (isConnected == false && (timerCurrent - timerLastDisconnectMsg) > intervalDisconnectMsg) {
+            printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
+        }   
         switch (commandHandlerReturn)
         {
             case 0:                         /* /quit */
@@ -236,14 +239,18 @@ int main(int argc, char **argv) {
                     printf("Reconnected!");
                     isConnected = true;
                 }
+            case 2:
+
+                close(connectFd);
+                isConnected = false;
 
             default:
-                continue;
+                ;
         }
         /*if (isTester == 1) {
-            if ((t_cur - t_last) > interval) {
+            if ((timerCurrent - t_last) > interval) {
                     
-                    t_last = t_cur;
+                    t_last = timerCurrent;
 
                     int max = 180;
                     int min = 60;
