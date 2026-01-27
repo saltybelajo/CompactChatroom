@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
                                 break;
                             }
                         }
-                        if (commandHandlerReturn == 0) {
+                        if (commandHandlerReturn == -1) {
                             write(connectFd, buffReadnl, readnlBytes);
 
                             snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd=%d.\n", readnlBytes, connectFd);          /* logs */
