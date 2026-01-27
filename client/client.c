@@ -211,6 +211,7 @@ int main(int argc, char **argv) {
         /* the Command Handler */
 
         if (isConnected == false && (timerCurrent - timerLastDisconnectMsg) > intervalDisconnectMsg) {
+            timerLastDisconnectMsg = timerCurrent;
             printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
         }   
         switch (commandHandlerReturn)
