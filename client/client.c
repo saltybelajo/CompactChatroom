@@ -231,6 +231,7 @@ int main(int argc, char **argv) {
                     break;
                 }
                 connectFd = socket(AF_INET, SOCK_STREAM, 0);
+                printf("New connectFd is: %d\n", connectFd);
                 if (connectFd == -1) {
                     printf("Failed to create a socket to reconnect.\n");
                     snprintf(buffLogs, MSGMLEN - 1, "Failed to create a socket to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
