@@ -129,11 +129,11 @@ int main(int argc, char **argv) {
         int otherFdsResult = poll(otherFds, otherCount, 20);                                 /* polls cooking up */
                                                                                                 /* otherFds poll */
         if (otherFdsResult < 0) {
-            ;
+            snprintf(buffLogs, MSGMLEN - 1, "otherFdsResult = -1; error: %s\n", strerror(errno));                /* logs */
+            writeft(logFd, buffLogs, cliIpStr);
         }
         else if (otherFdsResult == 0) {
-            snprintf(buffLogs, MSGMLEN - 1, "otherFdsResult = 0.\n");                /* logs */
-            writeft(logFd, buffLogs, cliIpStr);
+            ;
         }
         else if (otherFdsResult > 0) {
 
