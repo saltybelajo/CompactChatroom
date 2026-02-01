@@ -185,20 +185,28 @@ int main(int argc, char **argv) {
                         char *buffReadnl = malloc(readnlBytes);
                         strncpy(buffReadnl, buffMsg, readnlBytes);
 
-                        snprintf(buffLogs, MSGMLEN-1, "Have read %d bytes from the terminal.\n", readnlBytes);          /* logs */
+                        snprintf(buffLogs, MSGMLEN - 1, "Read %d bytes from the terminal.\n", readnlBytes);          /* logs */
                         writeft(logFd, buffLogs, cliIpStr);
 
                         
-                        for(int r = 0; r < clientCmdPoolSize; r++) { // check if any commands have been input in the terminal
+                        for(int r = 0; r < clientCmdPoolSize; r++) {                            /* check if any commands have been input in the terminal */ 
                             if (hash_sdbm(buffReadnl) == hash_sdbm(clientCmdPool[r])) {
+                                char *cmdName = malloc(32);
+                                memset(cmdName, 0, 32);
+                                int cmdLen = strnlen(clientCmdPool[r], 32);
+                                strncpy(cmdName, clientCmdPool[r], cmdLen - 1);
+
+                                snprintf(buffLogs, MSGMLEN - 1, "Received a \"%s\" command from terminal.\n", cmdName);          /* logs */
+                                writeft(logFd, buffLogs, cliIpStr);
                                 commandHandlerReturn = r;
+                                free(cmdName);
                                 break;
                             }
                         }
                         if (commandHandlerReturn == -1) {
                             write(connectFd, buffReadnl, readnlBytes);
 
-                            snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd=%d.\n", readnlBytes, connectFd);          /* logs */
+                            snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd = %d.\n", readnlBytes, connectFd);          /* logs */
                             writeft(logFd, buffLogs, cliIpStr);
 
                             free(buffReadnl);
@@ -244,14 +252,16 @@ int main(int argc, char **argv) {
                     writeft(logFd, buffLogs, cliIpStr);
                 }
                 else {
-                    printf("Reconnected!");
+                    printf("Reconnected!\n");
                     isConnected = true;
                 }
+                break;
             case 2:
-
+                snprintf(buffLogs, MSGMLEN - 1, "/disconnect command received; closing the socket connectFd = %d\n", connectFd);          /* logs */
+                writeft(logFd, buffLogs, cliIpStr);
                 close(connectFd);
                 isConnected = false;
-
+                break;
             default:
                 ;
         }
