@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #define MSGMLEN 128
 #define PARCELMLEN 256

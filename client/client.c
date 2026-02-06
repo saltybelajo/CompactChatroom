@@ -25,18 +25,25 @@ int main(int argc, char **argv) {
 
     char *inputServIp = "127.0.0.1";
     char *cliIpStr = resolve_my_ip_address();
-    uint16_t inputServPort = 9877;
+    uint16_t inputServPort;
     snprintf(buffLogs, MSGMLEN, "Starting. argc = %d.\n", argc);                /* logs */
     writeft(logFd, buffLogs, cliIpStr);
 
-    if(argc == 2) {
-        inputServIp = argv[1];
-        //inputServPort = *argv[2];
-    }
-    else
-    {
+    if(argc != 3) {
         printf("Usage: %s <ip_address> <port>\n", argv[0]);
         exit(EXIT_FAILURE);
+        //inputServPort = *argv[2];
+    }
+    else {
+        inputServIp = argv[1];
+        long result0 = strtol(argv[2], NULL, 10);
+        if (result0 == LONG_MIN || result0 == LONG_MAX) {
+            printf("%s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        else {
+            inputServPort = result0;
+        }
     }
 
     /* if (argc == 4) {
@@ -112,14 +119,15 @@ int main(int argc, char **argv) {
 
     time_t timerLastDisconnectMsg = time(NULL);
     int intervalDisconnectMsg = 30;
-    int commandHandlerReturn;
+    bool receivedTermCmd;
+    char reservedCmdString[32];
 
     for ( ; ; ) {
 
         time_t timerCurrent = time(NULL);
-        commandHandlerReturn = -1;
-        
-        
+        memset(reservedCmdString, 0, sizeof(reservedCmdString));
+        receivedTermCmd = false;
+
         for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++)
         {
             otherFds[i].revents = 0;
@@ -137,9 +145,9 @@ int main(int argc, char **argv) {
         }
         else if (otherFdsResult > 0) {
 
-            for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++) {
+            for (int i = 0; i < sizeof(otherFds)/sizeof(otherFds[0]); i++) {           
 
-                if (i == 0 && otherFds[0].revents & POLLIN) {
+                if (i == 0 && otherFds[0].revents & POLLIN) {                                           /* reading bytes from the server*/
 
                     memset(buffPrc, 0, PARCELMLEN);
                     int n0 = read(otherFds[i].fd, buffPrc, PARCELMLEN);
@@ -158,7 +166,6 @@ int main(int argc, char **argv) {
                         
                     }
                     else if (n0 > 0) {
-
                         char *recvAuthor = malloc(AUTHORMLEN);
                         memset(recvAuthor, 0, AUTHORMLEN);
                         char *recvPayload = malloc(MSGMLEN);
@@ -170,7 +177,6 @@ int main(int argc, char **argv) {
                         free(recvAuthor);
                         free(recvPayload);
 
-                        
                     }
 
                     
@@ -188,29 +194,18 @@ int main(int argc, char **argv) {
                         snprintf(buffLogs, MSGMLEN - 1, "Read %d bytes from the terminal.\n", readnlBytes);          /* logs */
                         writeft(logFd, buffLogs, cliIpStr);
 
-                        
-                        for(int r = 0; r < clientCmdPoolSize; r++) {                            /* check if any commands have been input in the terminal */ 
-                            if (hash_sdbm(buffReadnl) == hash_sdbm(clientCmdPool[r])) {
-                                char *cmdName = malloc(32);
-                                memset(cmdName, 0, 32);
-                                int cmdLen = strnlen(clientCmdPool[r], 32);
-                                strncpy(cmdName, clientCmdPool[r], cmdLen - 1);
-
-                                snprintf(buffLogs, MSGMLEN - 1, "Received a \"%s\" command from terminal.\n", cmdName);          /* logs */
-                                writeft(logFd, buffLogs, cliIpStr);
-                                commandHandlerReturn = r;
-                                free(cmdName);
-                                break;
-                            }
+                        if (buffMsg[0] == '/') {
+                            receivedTermCmd = true;
+                            strncpy(reservedCmdString, buffReadnl, sizeof(reservedCmdString) - 1);
+                            snprintf(buffLogs, MSGMLEN - 1, "Received a command from stdin.\n");          // logs 
+                            writeft(logFd, buffLogs, cliIpStr);
                         }
-                        if (commandHandlerReturn == -1) {
+                        else {
                             write(connectFd, buffReadnl, readnlBytes);
-
                             snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd = %d.\n", readnlBytes, connectFd);          /* logs */
                             writeft(logFd, buffLogs, cliIpStr);
-
-                            free(buffReadnl);
-                        }   
+                        }
+                        free(buffReadnl);
                     }
                 }
             }
@@ -222,49 +217,69 @@ int main(int argc, char **argv) {
             timerLastDisconnectMsg = timerCurrent;
             printf("Looks like you have (been) disconnected. /reconnect to reconnect.\n");
         }   
-        switch (commandHandlerReturn)
-        {
-            case 0:                         /* /quit */
+        if (receivedTermCmd) {
 
-                close(connectFd);
-                writeft(logFd, "getline exit\n", cliIpStr);
-                exit(EXIT_SUCCESS);
+            /* check if a real command */
 
-            case 1:                         /* /reconnect */
-                
-                if (isConnected == true) {
-                    printf("Already connected!\n");
-                    snprintf(buffLogs, MSGMLEN - 1, "Handler received a /reconnect command, but the client seems to be connected.\n");          /* logs */
+            int cmdIndex = -1;
+            for(int r = 0; r < clientCmdPoolSize; r++) {                             
+                if (strncmp(reservedCmdString, clientCmdPool[r], sizeof(reservedCmdString) - 1) == 0) {
+                    snprintf(buffLogs, MSGMLEN - 1, "Received a \"%s\" command from terminal.\n", clientCmdPool[r]);          // logs 
                     writeft(logFd, buffLogs, cliIpStr);
+                    cmdIndex = r;
                     break;
                 }
-                connectFd = socket(AF_INET, SOCK_STREAM, 0);
-                printf("New connectFd is: %d\n", connectFd);
-                if (connectFd == -1) {
-                    printf("Failed to create a socket to reconnect.\n");
-                    snprintf(buffLogs, MSGMLEN - 1, "Failed to create a socket to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
-                    writeft(logFd, buffLogs, cliIpStr);
+            } 
+
+            if (cmdIndex > -1) {
+                switch (cmdIndex)
+                {
+                    case 0:                         /* /quit */
+                        close(connectFd);
+                        writeft(logFd, "getline exit\n", cliIpStr);
+                        exit(EXIT_SUCCESS);
+                    case 1:                         /* /reconnect */
+                        if (isConnected == true) {
+                            printf("Already connected!\n");
+                            snprintf(buffLogs, MSGMLEN - 1, "Handler received a /reconnect command, but the client seems to be connected.\n");          /* logs */
+                            writeft(logFd, buffLogs, cliIpStr);
+                            break;
+                        }
+                        connectFd = socket(AF_INET, SOCK_STREAM, 0);
+                        printf("New connectFd is: %d\n", connectFd);
+                        if (connectFd == -1) {
+                            printf("Failed to create a socket to reconnect.\n");
+                            snprintf(buffLogs, MSGMLEN - 1, "Failed to create a socket to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
+                            writeft(logFd, buffLogs, cliIpStr);
+                        }
+                        int connectAssert2 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+                        if (connectAssert2 < 0) {
+                            printf("Tried to reconnect but failed.\n");
+                            snprintf(buffLogs, MSGMLEN - 1, "Failed to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
+                            writeft(logFd, buffLogs, cliIpStr);
+                        }
+                        else {
+                            printf("Reconnected!\n");
+                            isConnected = true;
+                        }
+                        break;
+                    case 2:                 /* disconnect */
+                        snprintf(buffLogs, MSGMLEN - 1, "/disconnect command received; closing the socket connectFd = %d\n", connectFd);          /* logs */
+                        printf("Disconnecting...\n");
+                        writeft(logFd, buffLogs, cliIpStr);
+                        close(connectFd);
+                        isConnected = false;
+                        break;
+                    default:
+                        ;
                 }
-                int connectAssert2 = connect(connectFd, (struct sockaddr *) &servAddr, sizeof(servAddr));
-                if (connectAssert2 < 0) {
-                    printf("Tried to reconnect but failed.\n");
-                    snprintf(buffLogs, MSGMLEN - 1, "Failed to reconnect to: %s:%d.\n", inputServIp, inputServPort);          /* logs */
-                    writeft(logFd, buffLogs, cliIpStr);
-                }
-                else {
-                    printf("Reconnected!\n");
-                    isConnected = true;
-                }
-                break;
-            case 2:
-                snprintf(buffLogs, MSGMLEN - 1, "/disconnect command received; closing the socket connectFd = %d\n", connectFd);          /* logs */
-                writeft(logFd, buffLogs, cliIpStr);
-                close(connectFd);
-                isConnected = false;
-                break;
-            default:
-                ;
+            }
+            else {
+                printf("Incorrect command entered.\n");
+            }
         }
+        
+        
         /*if (isTester == 1) {
             if ((timerCurrent - t_last) > interval) {
                     
