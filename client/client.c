@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
                 printf("Incorrect command entered.\n");
             }
 
-            free(cmdIndex);
+            free(&cmdIndex);
         }
         
         
