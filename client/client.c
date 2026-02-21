@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
                     
                 }
 
-                if (i == 1 && otherFds[i].revents & POLLIN) {
+                if (i == 1 && otherFds[i].revents & POLLIN) {                               /* reading from the terminal */
 
                     memset(buffMsg, 0, MSGMLEN);
                     int readnlBytes = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
@@ -194,7 +194,10 @@ int main(int argc, char **argv) {
                         snprintf(buffLogs, MSGMLEN - 1, "Read %d bytes from the terminal.\n", readnlBytes);          /* logs */
                         writeft(logFd, buffLogs, cliIpStr);
 
-                        if (buffMsg[0] == '/') {
+                        if(buffReadnl == NULL) {
+                            ;
+                        }
+                        else if (buffMsg[0] == '/') {
                             receivedTermCmd = true;
                             strncpy(reservedCmdString, buffReadnl, sizeof(reservedCmdString) - 1);
                             snprintf(buffLogs, MSGMLEN - 1, "Received a command from stdin.\n");          // logs 
@@ -205,6 +208,7 @@ int main(int argc, char **argv) {
                             snprintf(buffLogs, MSGMLEN - 1, "Wrote %d bytes to the server via connectFd = %d.\n", readnlBytes, connectFd);          /* logs */
                             writeft(logFd, buffLogs, cliIpStr);
                         }
+
                         free(buffReadnl);
                     }
                 }
@@ -277,6 +281,8 @@ int main(int argc, char **argv) {
             else {
                 printf("Incorrect command entered.\n");
             }
+
+            free(cmdIndex);
         }
         
         

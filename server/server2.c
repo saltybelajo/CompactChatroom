@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+    const char *cmdRoster[3] = {"/quit\n", "/online\n", "/clients\n"};
+
 /*    if (argc >= 2) {
         inputServIp = argv[1];
     } */
@@ -121,8 +123,13 @@ int main(int argc, char **argv) {
     
 
     time_t t_last = time(NULL);
+    bool receivedTermCmd;
+    char reservedCmdString[32];
+
     for ( ; ; ) {
         time_t t_cur = time(NULL);
+        receivedTermCmd = false;
+        memset(reservedCmdString, 0, 32);
                                                                                     /* set .revents everywhere to 0 */
         for (int i = 0; i < sizeof(readFromCliFds)/sizeof(readFromCliFds[0]); i++) 
         {
@@ -198,7 +205,7 @@ int main(int argc, char **argv) {
 
                     }   
 
-                    if (i == 1 && otherFds[i].revents & POLLIN) {
+                    if (i == 1 && otherFds[i].revents & POLLIN) {                                   /* read from terminal */
                         memset(buffMsg, 0, MSGMLEN);
                         int r0 = readnl(otherFds[i].fd, buffMsg, MSGMLEN);
 
@@ -207,51 +214,17 @@ int main(int argc, char **argv) {
                             strncpy(buffR0, buffMsg, r0);
                             if (buffR0 == NULL) {
                                 /* ignore it */
-                                free(buffR0);
                             }
                             else if (buffR0[0] == '/') {
-                                unsigned long hashValue = hash_sdbm(buffR0);
-                                if (hashValue == hash_sdbm("/quit\n")) {
-                                    free(buffR0);
-                                    close(logFd);
-
-                                    char *p3 = malloc(PARCELMLEN);
-                                    strncpy(buffLogs, "Server is shutting down...\n", 28);
-                                    anm_construct_msg(p3, PARCELMLEN, authorServer, buffLogs);
-                                    broadcast(readFromCliFds, CLIENTCAP, p3, PARCELMLEN);
-                                    exit(EXIT_SUCCESS);
-                                }
-                                else if (hashValue == hash_sdbm("/online\n")) {
-                                    free(buffR0);
-                                    printf("Current online: %d\n", curOnline);
-                                }
-                                else if (hashValue == hash_sdbm("/clients\n")) {
-                                    free(buffR0);
-                                    printf("Current clients are:\n");
-                                    for (int g = 0; g < CLIENTCAP; g++) {
-                                        if (readFromCliFds[g].fd > 0) {
-
-                                            int __fd0 = readFromCliFds[g].fd;
-                                            char __cliIpStr[INET_ADDRSTRLEN];
-                                            uint16_t __cliPort;
-                                            struct sockaddr_in __cliAddr;
-                                            memset(&__cliAddr, 0, sizeof(__cliAddr));
-
-
-                                            b_socket *__pCurUser2 = NULL;
-                                            __pCurUser2 = find_b_socket(__fd0);
-                                            
-                                            if (__pCurUser2 != NULL) {
-                                                __cliAddr = __pCurUser2->addr;
-                                                inet_ntop(AF_INET, (struct sockaddr *) &__cliAddr.sin_addr.s_addr, __cliIpStr, INET_ADDRSTRLEN);
-                                                __cliPort = ntohs(__cliAddr.sin_port);
-
-                                                printf("%s:%u on fd = %d\n", __cliIpStr, __cliPort, __fd0);
-                                            }
-                                        }
-                                    }
-                                }
+                                receivedTermCmd = true;
+                                strncpy(reservedCmdString, buffR0, r0);
+                                snprintf(buffLogs, MSGMLEN - 1, "Received a command from stdin.\n");          // logs 
+                                writeft(logFd, buffLogs, authorServer);
                             }
+                            else {
+                                ;
+                            }
+                            free(buffR0);
                             //write(connectFd, buffR0, nread);
                         }
                     }
@@ -358,6 +331,60 @@ int main(int argc, char **argv) {
                     free(p5);
                     free(rstr);
                 }
+
+        if (receivedTermCmd) {
+            
+            int cmdIndex = -1;
+            for (int i = 0; i < sizeof(cmdRoster); i++) {
+                if (strncmp(reservedCmdString, cmdRoster[i], sizeof(reservedCmdString) - 1) == 0) {
+                    snprintf(buffLogs, MSGMLEN - 1, "Received a \"%s\" command from terminal.\n", cmdRoster[i]);          // logs 
+                    writeft(logFd, buffLogs, authorServer);
+                    cmdIndex = i;
+                    break;
+                }
+            }
+
+            if (cmdIndex > 0) {
+                switch(cmdIndex) {
+                    case 0:
+                        close(logFd);
+
+                        char *p3 = malloc(PARCELMLEN);
+                        strncpy(buffLogs, "Server is shutting down...\n", 28);
+                        anm_construct_msg(p3, PARCELMLEN, authorServer, buffLogs);
+                        broadcast(readFromCliFds, CLIENTCAP, p3, PARCELMLEN);
+                        exit(EXIT_SUCCESS);
+                    case 1:
+                        printf("Current online: %d\n", curOnline);
+                        break;
+                    case 2:
+                        printf("Current clients are:\n");
+                        for (int g = 0; g < CLIENTCAP; g++) {
+                            if (readFromCliFds[g].fd > 0) {
+
+                                int __fd0 = readFromCliFds[g].fd;
+                                char __cliIpStr[INET_ADDRSTRLEN];
+                                uint16_t __cliPort;
+                                struct sockaddr_in __cliAddr;
+                                memset(&__cliAddr, 0, sizeof(__cliAddr));
+
+
+                                b_socket *__pCurUser2 = NULL;
+                                __pCurUser2 = find_b_socket(__fd0);
+                                
+                                if (__pCurUser2 != NULL) {
+                                    __cliAddr = __pCurUser2->addr;
+                                    inet_ntop(AF_INET, (struct sockaddr *) &__cliAddr.sin_addr.s_addr, __cliIpStr, INET_ADDRSTRLEN);
+                                    __cliPort = ntohs(__cliAddr.sin_port);
+
+                                    printf("%s:%u on fd = %d\n", __cliIpStr, __cliPort, __fd0);
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+        }
 
     }
 
